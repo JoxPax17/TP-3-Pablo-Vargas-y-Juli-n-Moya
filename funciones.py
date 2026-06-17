@@ -166,3 +166,92 @@ def crearVoucherPDF(vehiculo, rutaQR, rutaPDF):
     pdf.cell(0, 8, "Conserve este voucher para el retiro de su vehiculo.", ln=True, align="C")
     pdf.image(rutaQR, x=75, y=None, w=60)
     pdf.output(rutaPDF)
+
+def obtenerVehiculos(baseDatos, config):
+    """
+    Funcionalidad:
+        Consume la API de Mockaroo para obtener datos de vehiculos, construye
+        un diccionario intermedio, lo imprime en el shell, crea los objetos
+        Estacionamiento, genera los vouchers PDF con QR y guarda la BD en disco.
+    Entrada:
+        - baseDatos (list): lista actual de objetos Estacionamiento
+        - config (dict): configuracion del parqueo (tamano, tieneElectrico, etc.)
+    Salida:
+        - nuevaBD (list): lista actualizada de objetos Estacionamiento
+    """
+    tope = calcularTopeMasivo(config) # 1. Calcular cuántos vehículos pedir
+    url = ("https://api.mockaroo.com/api/generate.json"
+           "?key=" + API_KEY + "&count=" + str(tope))
+    try: # 2. Consumir la API
+        respuesta   = urllib.request.urlopen(url)
+        datos       = json.loads(respuesta.read().decode("utf-8"))
+        respuesta.close()
+    except Exception as e:
+        print("Error al consumir la API:", e)
+        return baseDatos
+    diccionario = {} # 3. Construir diccionario intermedio (placa como llave)
+    indice      = 1
+    for registro in datos:
+        # Mockaroo devuelve campos variados; adaptar según el schema configurado
+        placa  = str(registro.get("reg_number", "SIN-" + str(indice))).upper()
+        marca  = str(registro.get("make",   "Desconocida"))
+        color  = str(registro.get("color",  "Blanco"))
+        tipoRaw = registro.get("vehicle_year", 2000) # tipo: usamos vehicle_year para derivar un int 1-5 de forma sencilla
+        tipo    = (int(tipoRaw) % 5) + 1   # mapea a 1..5
+        ubicacion      = generarUbicacion(indice)
+        fechaHoraEntrada = generarFechaHoraEntrada()
+        diccionario[placa] = {
+            "marca":            marca,
+            "color":            color,
+            "tipo":             tipo,
+            "ubicacion":        ubicacion,
+            "fechaHoraEntrada": fechaHoraEntrada,
+            "fechaHoraSalida":  "",
+            "monto":            0,
+            "tipoPago":         0}
+        indice = indice + 1
+    # 4. Imprimir diccionario en shell para verificación
+    print("\n===== DICCIONARIO DE VEHICULOS CARGADOS =====")
+    for placa, datos in diccionario.items():
+        print("Placa:", placa, "->", datos)
+    print("=============================================\n")
+    nuevaBD = [] # 5. Convertir a objetos Estacionamiento
+    idContador = 1
+    for placa, datos in diccionario.items():
+        obj = Estacionamiento(
+            id             = idContador,
+            placa          = placa,
+            marca          = datos["marca"],
+            color          = datos["color"],
+            tipo           = datos["tipo"],
+            tipoEspacio    = TIPO_GENERAL,
+            ubicacion      = datos["ubicacion"],
+            fechaHoraEntrada = datos["fechaHoraEntrada"],
+            fechaHoraSalida  = datos["fechaHoraSalida"],
+            monto          = datos["monto"],
+            tipoPago       = datos["tipoPago"])
+        nuevaBD.append(obj)
+        idContador = idContador + 1
+    for obj in nuevaBD: # 6. Generar voucher PDF + QR por cada vehículo
+        placa, marca, color, tipo = obj.info
+        _, fechaEntrada, _        = obj.estadia
+        contenidoQR = (placa + "-" + str(marca) + "-" +
+                       str(tipo) + "-" + fechaEntrada)
+        fechaFormato = fechaEntrada.replace(":", "").replace(" ", "_").replace("-", "")
+        nombreBase   = "voucher_#" + placa + "_" + fechaFormato
+        rutaQR  = nombreBase + ".png"
+        rutaPDF = nombreBase + ".pdf"
+        try:
+            crearQR(contenidoQR, rutaQR)
+            crearVoucherPDF(obj, rutaQR, rutaPDF)
+            print("Voucher creado:", rutaPDF)
+        except Exception as e:
+            print("Error creando voucher para", placa, ":", e)
+    try: # 7. Guardar BD en disco
+        archivo = open(ARCHIVO_BD, "wb")
+        pickle.dump(nuevaBD, archivo)
+        archivo.close()
+        print("BD guardada exitosamente con", len(nuevaBD), "vehículos.")
+    except Exception as e:
+        print("Error al guardar la BD:", e)
+    return nuevaBD
