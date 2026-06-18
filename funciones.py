@@ -255,3 +255,49 @@ def obtenerVehiculos(baseDatos, config):
     except Exception as e:
         print("Error al guardar la BD:", e)
     return nuevaBD
+    
+def calcularEspacios(config):
+    """
+    Funcionalidad: Calcula la cantidad de espacios generales, especiales y electrico segun la configuracion del parqueo.
+    Entrada: configuracion con tamano y tieneElectrico
+    Salida:cantidad de espacios especiales, si el parqueo tiene espacio electrico, cantidad de espacios generales disponibles
+    """
+    tamano = config["tamano"]
+    especiales = int(tamano * 0.05)
+    if tamano * 0.05 > especiales:
+        especiales = especiales + 1
+    if especiales < 2:
+        especiales = 2
+    tieneElectrico = config["tieneElectrico"]
+    generales = tamano - especiales
+    if tieneElectrico:
+        generales = generales - 1
+    return especiales, tieneElectrico, generales
+
+
+def obtenerColorEspacio(ubicacion, baseDatos):
+    """
+    Funcionalidad: Determina si un espacio esta ocupado o libre buscando en la BD. Un espacio esta ocupado si tiene fecha de salida vacia.
+    Entrada: codigo del espacio (ej: G-001, ESP-1, EL-001), lista de objetos Estacionamiento
+    Salida: red si ocupado, green si libre y objeto si esta ocupado, None si libre
+    """
+    for vehiculo in baseDatos:
+        if vehiculo.estadia[0] == ubicacion and vehiculo.estadia[2] == "":
+            return "red", vehiculo
+    return "green", None
+
+
+def construirComando(btn, ubicacion, ventanaPadre, baseDatos, config, tipoEspacio):
+    """
+    Funcionalidad:Construye la funcion que ejecuta el clic en un espacio del grid
+    Entrada:boton del espacio en el grid, codigo del espacio, ventana del parqueo, lista de objetos Estacion
+    configuracion del parqueo y tipo de espacio
+    Salida: funcion lista para asignar a comando de un botón
+    """
+    def comando():
+        color, vehiculo = obtenerColorEspacio(ubicacion, baseDatos)
+        if color == "red":
+            observarEspacio(btn, ubicacion, ventanaPadre, baseDatos, config, vehiculo)
+        else:
+            estacionarVehiculo(btn, ubicacion, ventanaPadre, baseDatos, config, tipoEspacio)
+    return comando
