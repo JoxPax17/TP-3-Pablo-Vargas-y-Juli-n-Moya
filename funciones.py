@@ -33,12 +33,10 @@ class Estacionamiento:
  
 def cargarBD():
     """
-    Funcionalidad:
-        Carga la lista de objetos Estacionamiento desde memoria secundaria.
+    Funcionalidad: Carga la lista de objetos Estacionamiento desde memoria secundaria.
     Entrada: ninguna
-    Salida:
-        -bd (list): lista de objetos si el archivo existe, o None si no existe
-    """
+    Salida:bd (list): lista de objetos si el archivo existe, o None si no existe
+    """ 
     try:
         archivo = open(archivoBd, "rb")
         bd = pickle.load(archivo)
@@ -49,12 +47,9 @@ def cargarBD():
  
 def cargarConfig():
     """
-    Funcionalidad:
-        Carga el diccionario de configuracion del parqueo desde memoria secundaria.
-    Entrada:
-        - ninguna
-    Salida:
-        - config (dict): diccionario con la configuracion, o None si no existe
+    Funcionalidad: Carga el diccionario de configuracion del parqueo desde memoria secundaria.
+    Entrada: ninguna
+    Salida: config (dict): diccionario con la configuracion, o None si no existe
     """
     try:
         archivo = open(archivoConfig, "rb")
@@ -66,10 +61,8 @@ def cargarConfig():
  
 def guardarBD(baseDatos):
     """
-    Funcionalidad:
-        Persiste la lista de objetos Estacionamiento en disco usando pickle.
-    Entrada:
-        - baseDatos (list): lista de objetos Estacionamiento
+    Funcionalidad: Persiste la lista de objetos Estacionamiento en disco usando pickle.
+    Entrada: baseDatos (list): lista de objetos Estacionamiento
     Salida: ninguna
     """
     try:
@@ -81,10 +74,8 @@ def guardarBD(baseDatos):
  
 def guardarConfig(config):
     """
-    Funcionalidad:
-        Persiste el diccionario de configuracion en disco usando pickle.
-    Entrada:
-        - config (dict): diccionario de configuracion del parqueo
+    Funcionalidad: Persiste el diccionario de configuracion en disco usando pickle.
+    Entrada: config (dict): diccionario de configuracion del parqueo
     Salida: ninguna
     """
     try:
@@ -96,13 +87,9 @@ def guardarConfig(config):
  
 def calcularTopeMasivo(config):
     """
-    Funcionalidad:
-        Calcula cuantos vehiculos generales se pueden llenar masivamente
-        segun las reglas del enunciado (5% especiales, electrico, 5% libre).
-    Entrada:
-        - config (dict): diccionario con tamano, tieneElectrico, tiempoGracia, montoPorHora
-    Salida:
-        - tope (int): cantidad maxima de espacios generales a llenar masivamente
+    Funcionalidad: Calcula cuantos vehiculos generales se pueden llenar masivamente segun las reglas del enunciado (5% especiales, electrico, 5% libre).
+    Entrada: config (dict): diccionario con tamano, tieneElectrico, tiempoGracia, montoPorHora
+    Salida: tope (int): cantidad maxima de espacios generales a llenar masivamente
     """
     tamano = config["tamano"]
     especiales = int(tamano * 0.05)
@@ -121,12 +108,9 @@ def calcularTopeMasivo(config):
  
 def generarFechaHoraEntrada():
     """
-    Funcionalidad:
-        Genera una hora de entrada aleatoria entre las 7:00 am y la hora actual.
-    Entrada:
-        - ninguna
-    Salida:
-        - fechaHora (str): fecha y hora en formato DD-MM-AAAA HH:MM
+    Funcionalidad: Genera una hora de entrada aleatoria entre las 7:00 am y la hora actual.
+    Entrada: ninguna
+    Salida: fechaHora (str): fecha y hora en formato DD-MM-AAAA HH:MM
     """
     ahora  = datetime.datetime.now()
     hoy    = ahora.date()
@@ -141,22 +125,16 @@ def generarFechaHoraEntrada():
  
 def generarUbicacion(indice):
     """
-    Funcionalidad:
-        Genera una cadena de ubicacion basada en el indice del espacio general.
-    Entrada:
-        - indice (int): numero de espacio (base 1)
-    Salida:
-        - ubicacion (str): string con formato G-001, G-002, etc.
+    Funcionalidad: Genera una cadena de ubicacion basada en el indice del espacio general.
+    Entrada: indice (int): numero de espacio (base 1)
+    Salida: ubicacion (str): string con formato G-001, G-002, etc.
     """
     return "G-" + str(indice).zfill(3)
  
 def crearQR(contenido, rutaArchivo):
     """
-    Funcionalidad:
-        Genera un codigo QR con el contenido dado y lo guarda en disco.
-    Entrada:
-        - contenido (str): texto a codificar en el QR
-        - rutaArchivo (str): ruta donde guardar la imagen PNG del QR
+    Funcionalidad: Genera un codigo QR con el contenido dado y lo guarda en disco.
+    Entrada: contenido (str): texto a codificar en el QR, rutaArchivo (str): ruta donde guardar la imagen PNG del QR
     Salida: ninguna
     """
     img = qrcode.make(contenido)
@@ -164,12 +142,8 @@ def crearQR(contenido, rutaArchivo):
  
 def crearVoucherPDF(vehiculo, rutaQR, rutaPDF):
     """
-    Funcionalidad:
-        Genera un voucher en PDF con la informacion del vehiculo y su codigo QR.
-    Entrada:
-        - vehiculo (Estacionamiento): objeto con la informacion del vehiculo
-        - rutaQR (str): ruta de la imagen QR previamente generada
-        - rutaPDF (str): ruta donde guardar el PDF del voucher
+    Funcionalidad: Genera un voucher en PDF con la informacion del vehiculo y su codigo QR.
+    Entrada: vehiculo (Estacionamiento): objeto con la informacion del vehiculo, rutaQR (str): ruta de la imagen QR previamente generada, rutaPDF (str): ruta donde guardar el PDF del voucher
     Salida: ninguna
     """
     placa, marca, color, tipo  = vehiculo.info
@@ -205,15 +179,9 @@ def crearVoucherPDF(vehiculo, rutaQR, rutaPDF):
  
 def obtenerVehiculos(baseDatos, config):
     """
-    Funcionalidad:
-        Consume la API de Mockaroo para obtener datos de vehiculos, construye
-        un diccionario intermedio, lo imprime en el shell, crea los objetos
-        Estacionamiento, genera los vouchers PDF con QR y guarda la BD en disco.
-    Entrada:
-        - baseDatos (list): lista actual de objetos Estacionamiento
-        - config (dict): configuracion del parqueo (tamano, tieneElectrico, etc.)
-    Salida:
-        - nuevaBD (list): lista actualizada de objetos Estacionamiento
+    Funcionalidad: Consume la API de Mockaroo para obtener datos de vehiculos, construye un diccionario intermedio, lo imprime en el shell, crea los objetos. Estacionamiento, genera los vouchers PDF con QR y guarda la BD en disco.
+    Entrada: baseDatos (list): lista actual de objetos Estacionamiento, config (dict): configuracion del parqueo (tamano, tieneElectrico, etc.)
+    Salida: nuevaBD (list): lista actualizada de objetos Estacionamiento
     """
     tope = calcularTopeMasivo(config)
     url  = ("https://api.mockaroo.com/api/generate.json""?key=" + apiKey + "&count=" + str(tope))
@@ -290,12 +258,9 @@ def obtenerVehiculos(baseDatos, config):
 
 def obtenerNombreTipo(tipoInt):
     """
-    Funcionalidad:
-        Convierte el entero de tipo de vehiculo a su nombre legible.
-    Entrada:
-        - tipoInt (int): entero que representa el tipo (1-5)
-    Salida:
-        - nombre (str): nombre del tipo de vehiculo
+    Funcionalidad: Convierte el entero de tipo de vehiculo a su nombre legible.
+    Entrada: tipoInt (int): entero que representa el tipo (1-5)
+    Salida: nombre (str): nombre del tipo de vehiculo
     """
     dictTipos = {1: "Sedan", 2: "SUV", 3: "Pickup", 4: "Van", 5: "Deportivo"}
     nombre = dictTipos.get(tipoInt, "Otro")
@@ -303,12 +268,9 @@ def obtenerNombreTipo(tipoInt):
  
 def obtenerNombrePago(pagoInt):
     """
-    Funcionalidad:
-        Convierte el entero de tipo de pago a su nombre legible.
-    Entrada:
-        - pagoInt (int): 1=Efectivo, 2=SINPE, 3=Tarjeta
-    Salida:
-        - nombre (str): nombre del tipo de pago
+    Funcionalidad: Convierte el entero de tipo de pago a su nombre legible.
+    Entrada: pagoInt (int): 1=Efectivo, 2=SINPE, 3=Tarjeta
+    Salida: nombre (str): nombre del tipo de pago
     """
     dictPagos = {pagoEfectivo: "Efectivo", pagoSinpe: "SINPE", pagoTarjeta: "Tarjeta"}
     nombre = dictPagos.get(pagoInt, "Sin pago")
@@ -317,12 +279,8 @@ def obtenerNombrePago(pagoInt):
 def calcularMonto(fechaEntrada, tiempoGracia, montoPorHora):
     """
     Funcionalidad: Calcula el monto a cobrar segun la hora de entrada, la hora actual, el tiempo de gracia y el monto por hora configurado.
-    Entrada:
-        - fechaEntrada (str): fecha y hora de entrada en formato DD-MM-AAAA HH:MM
-        - tiempoGracia (int): minutos de gracia sin cobro
-        - montoPorHora (int): costo en colones por hora
-    Salida:
-        - monto (int): monto total a cobrar en colones
+    Entrada: fechaEntrada (str): fecha y hora de entrada en formato DD-MM-AAAA HH:MM, tiempoGracia (int): minutos de gracia sin cobro, montoPorHora (int): costo en colones por hora
+    Salida: monto (int): monto total a cobrar en colones
     """
     ahora = datetime.datetime.now()
     entrada = datetime.datetime.strptime(fechaEntrada, "%d-%m-%Y %H:%M")
@@ -338,12 +296,8 @@ def calcularMonto(fechaEntrada, tiempoGracia, montoPorHora):
 def crearFacturaPDF(vehiculo, rutaQR, rutaPDF):
     """
     Funcionalidad: Genera la factura en PDF con la informacion completa de la estadia del vehiculo y su codigo QR.
-    Entrada:
-        - vehiculo (Estacionamiento): objeto con la estadia ya completada
-        - rutaQR (str): ruta de la imagen PNG del QR
-        - rutaPDF (str): ruta donde guardar el PDF
-    Salida:
-        - ninguna
+    Entrada: vehiculo (Estacionamiento): objeto con la estadia ya completada, rutaQR (str): ruta de la imagen PNG del QR, rutaPDF (str): ruta donde guardar el PDF
+    Salida: ninguna
     """
     placa, marca, color, tipo     = vehiculo.info
     ubicacion, fechaEnt, fechaSal = vehiculo.estadia
@@ -462,11 +416,8 @@ def observarEspacio(ventanaPadre, vehiculo, baseDatos, config):
  
         def confirmarPago():
             """
-            Funcionalidad:
-                Confirma el pago con el tipo seleccionado, registra la fecha
-                de salida, actualiza la BD, genera factura PDF y cierra las ventanas.
-            Entrada:
-                - ninguna (usa variables del closure)
+            Funcionalidad: Confirma el pago con el tipo seleccionado, registra la fecha de salida, actualiza la BD, genera factura PDF y cierra las ventanas.
+            Entrada: ninguna (usa variables del closure)
             Salida: ninguna
             """
             tipoPagoElegido = varPago.get()
