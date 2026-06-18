@@ -311,7 +311,227 @@ def obtenerVehiculos(baseDatos, config):
     except Exception as e:
         print("Error al guardar la BD:", e)
     return nuevaBD
+
+def obtenerNombreTipo(tipoInt):
+    """
+    Funcionalidad:
+        Convierte el entero de tipo de vehiculo a su nombre legible.
+    Entrada:
+        - tipoInt (int): entero que representa el tipo (1-5)
+    Salida:
+        - nombre (str): nombre del tipo de vehiculo
+    """
+    dictTipos = {1: "Sedan", 2: "SUV", 3: "Pickup", 4: "Van", 5: "Deportivo"}
+    nombre = dictTipos.get(tipoInt, "Otro")
+    return nombre
  
+def obtenerNombrePago(pagoInt):
+    """
+    Funcionalidad:
+        Convierte el entero de tipo de pago a su nombre legible.
+    Entrada:
+        - pagoInt (int): 1=Efectivo, 2=SINPE, 3=Tarjeta
+    Salida:
+        - nombre (str): nombre del tipo de pago
+    """
+    dictPagos = {pagoEfectivo: "Efectivo", pagoSinpe: "SINPE", pagoTarjeta: "Tarjeta"}
+    nombre = dictPagos.get(pagoInt, "Sin pago")
+    return nombre
+ 
+def calcularMonto(fechaEntrada, tiempoGracia, montoPorHora):
+    """
+    Funcionalidad: Calcula el monto a cobrar segun la hora de entrada, la hora actual, el tiempo de gracia y el monto por hora configurado.
+    Entrada:
+        - fechaEntrada (str): fecha y hora de entrada en formato DD-MM-AAAA HH:MM
+        - tiempoGracia (int): minutos de gracia sin cobro
+        - montoPorHora (int): costo en colones por hora
+    Salida:
+        - monto (int): monto total a cobrar en colones
+    """
+    ahora = datetime.datetime.now()
+    entrada = datetime.datetime.strptime(fechaEntrada, "%d-%m-%Y %H:%M")
+    minutosEstadia = int((ahora - entrada).total_seconds() / 60)
+    if minutosEstadia <= tiempoGracia:
+        monto = 0
+    else:
+        minutosCobrables = minutosEstadia - tiempoGracia
+        horasCobrables = minutosCobrables / 60.0
+        monto = int(horasCobrables * montoPorHora)
+    return monto
+ 
+def crearFacturaPDF(vehiculo, rutaQR, rutaPDF):
+    """
+    Funcionalidad: Genera la factura en PDF con la informacion completa de la estadia del vehiculo y su codigo QR.
+    Entrada:
+        - vehiculo (Estacionamiento): objeto con la estadia ya completada
+        - rutaQR (str): ruta de la imagen PNG del QR
+        - rutaPDF (str): ruta donde guardar el PDF
+    Salida:
+        - ninguna
+    """
+    placa, marca, color, tipo     = vehiculo.info
+    ubicacion, fechaEnt, fechaSal = vehiculo.estadia
+    monto, tipoPago               = vehiculo.pago
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 16)
+    pdf.set_text_color(20, 120, 60)
+    pdf.cell(0, 10, "FACTURA DE ESTACIONAMIENTO", ln=True, align="C")
+    pdf.set_draw_color(20, 120, 60)
+    pdf.line(10, 22, 200, 22)
+    pdf.ln(6)
+    pdf.set_font("Arial", "B", 11)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 8, "Datos del vehiculo", ln=True)
+    pdf.set_font("Arial", "", 11)
+    pdf.cell(55, 8, "Placa:",      border=0)
+    pdf.cell(0,  8, placa,         border=0, ln=True)
+    pdf.cell(55, 8, "Marca/Tipo:", border=0)
+    pdf.cell(0,  8, str(marca) + " (" + obtenerNombreTipo(tipo) + ")", border=0, ln=True)
+    pdf.cell(55, 8, "Color:",      border=0)
+    pdf.cell(0,  8, str(color),    border=0, ln=True)
+    pdf.cell(55, 8, "Ubicacion:",  border=0)
+    pdf.cell(0,  8, ubicacion,     border=0, ln=True)
+    pdf.ln(3)
+    pdf.set_font("Arial", "B", 11)
+    pdf.cell(0, 8, "Detalle de la estadia", ln=True)
+    pdf.set_font("Arial", "", 11)
+    pdf.cell(55, 8, "Hora de entrada:", border=0)
+    pdf.cell(0,  8, fechaEnt,           border=0, ln=True)
+    pdf.cell(55, 8, "Hora de salida:",  border=0)
+    pdf.cell(0,  8, fechaSal,           border=0, ln=True)
+    pdf.cell(55, 8, "Tipo de pago:",    border=0)
+    pdf.cell(0,  8, obtenerNombrePago(tipoPago), border=0, ln=True)
+    pdf.set_font("Arial", "B", 12)
+    pdf.set_text_color(20, 120, 60)
+    pdf.cell(55, 10, "TOTAL A PAGAR:", border=0)
+    pdf.cell(0,  10, "CRC " + str(monto), border=0, ln=True)
+    pdf.ln(3)
+    pdf.set_font("Arial", "I", 9)
+    pdf.set_text_color(120, 120, 120)
+    pdf.cell(0, 8, "Gracias por usar nuestro servicio de estacionamiento.", ln=True, align="C")
+    pdf.image(rutaQR, x=75, y=None, w=55)
+    pdf.output(rutaPDF)
+ 
+def observarEspacio(ventanaPadre, vehiculo, baseDatos, config):
+    """
+    Funcionalidad: Abre una ventana Toplevel para observar la informacion de un espacio ocupado (rojo). Muestra los datos del vehiculo y permite pagar. Actualiza la BD si se realiza un pago.
+    Entrada: ventanaPadre (tk.Toplevel): ventana del grid de estacionamiento ,vehiculo (Estacionamiento): objeto del espacio ocupado ,baseDatos (list): lista completa de objetos Estacionamiento, config (dict): configuracion del parqueo
+    Salida: pagado (bool): True si el vehiculo pago y se libero el espacio
+    """
+    pagado = [False]
+    ventana = tk.Toplevel(ventanaPadre)
+    ventana.title("Observar Espacio")
+    ventana.resizable(False, False)
+    placa, marca, color, tipo  = vehiculo.info
+    ubicacion, fechaEntrada, _ = vehiculo.estadia
+    marco = tk.Frame(ventana, padx=25, pady=20)
+    marco.pack()
+    tk.Label(marco, text="Informacion del Espacio",
+             font=("Arial", 13, "bold")).grid(row=0, column=0, columnspan=2, pady=(0, 12))
+    tk.Label(marco, text="# Campo:", anchor="w", width=16).grid(row=1, column=0, sticky="w", pady=3)
+    varCampo   = tk.StringVar(value=ubicacion)
+    comboCampo = ttk.Combobox(marco, textvariable=varCampo, state="disabled",
+                               disabledforeground="black", width=22)
+    comboCampo.grid(row=1, column=1, pady=3)
+    tk.Label(marco, text="Placa:", anchor="w", width=16).grid(row=2, column=0, sticky="w", pady=3)
+    entryPlaca = tk.Entry(marco, width=25)
+    entryPlaca.insert(0, placa)
+    entryPlaca.config(state="disabled", disabledforeground="black")
+    entryPlaca.grid(row=2, column=1, pady=3)
+    tk.Label(marco, text="Marca:", anchor="w", width=16).grid(row=3, column=0, sticky="w", pady=3)
+    varMarca   = tk.StringVar(value=str(marca))
+    comboMarca = ttk.Combobox(marco, textvariable=varMarca, state="disabled",
+                               disabledforeground="black", width=22)
+    comboMarca.grid(row=3, column=1, pady=3)
+    tk.Label(marco, text="Color:", anchor="w", width=16).grid(row=4, column=0, sticky="w", pady=3)
+    varColor   = tk.StringVar(value=str(color))
+    comboColor = ttk.Combobox(marco, textvariable=varColor, state="disabled",
+                               disabledforeground="black", width=22)
+    comboColor.grid(row=4, column=1, pady=3)
+    tk.Label(marco, text="Hora de entrada:", anchor="w", width=16).grid(row=5, column=0, sticky="w", pady=3)
+    entryEntrada = tk.Entry(marco, width=25)
+    entryEntrada.insert(0, fechaEntrada)
+    entryEntrada.config(state="disabled", disabledforeground="black")
+    entryEntrada.grid(row=5, column=1, pady=3)
+    tk.Frame(marco, height=2, bd=1, relief="sunken").grid(
+        row=6, column=0, columnspan=2, sticky="ew", pady=10)
+ 
+    def accionPagar():
+        """
+        Funcionalidad: Solicita el tipo de pago, calcula el monto segun la estadia, actualiza el objeto en la BD, genera la factura PDF con QR y libera el espacio en la pantalla.
+        Entrada: ninguna (usa variables del closure)
+        Salida: ninguna
+        """
+        ventPago  = tk.Toplevel(ventana)
+        ventPago.title("Tipo de Pago")
+        ventPago.resizable(False, False)
+        marcoPago = tk.Frame(ventPago, padx=20, pady=15)
+        marcoPago.pack()
+        tk.Label(marcoPago, text="Seleccione el tipo de pago:",
+                 font=("Arial", 11, "bold")).grid(row=0, column=0, columnspan=2, pady=(0, 8))
+        varPago = tk.IntVar(value=pagoEfectivo)
+        opcionesPago = [("Efectivo", pagoEfectivo),
+            ("SINPE",    pagoSinpe),
+            ("Tarjeta",  pagoTarjeta),]
+        for i, (texto, valor) in enumerate(opcionesPago):
+            tk.Radiobutton(marcoPago, text=texto, variable=varPago,
+                           value=valor).grid(row=i+1, column=0, sticky="w", pady=2)
+        montoEstimado = calcularMonto(fechaEntrada,
+            config.get("tiempoGracia", 0),
+            config.get("montoPorHora", 0))
+        tk.Label(marcoPago, text="Monto a pagar: CRC " + str(montoEstimado),
+                 font=("Arial", 11, "bold"), fg="darkgreen").grid(
+            row=len(opcionesPago)+1, column=0, pady=(10, 4))
+ 
+        def confirmarPago():
+            """
+            Funcionalidad:
+                Confirma el pago con el tipo seleccionado, registra la fecha
+                de salida, actualiza la BD, genera factura PDF y cierra las ventanas.
+            Entrada:
+                - ninguna (usa variables del closure)
+            Salida: ninguna
+            """
+            tipoPagoElegido = varPago.get()
+            confirmacion = messagebox.askyesno(
+                "Confirmar pago",
+                "Tipo: " + obtenerNombrePago(tipoPagoElegido) +
+                "\nMonto: CRC " + str(montoEstimado) +
+                "\n\n¿Confirma el pago?")
+            if not confirmacion:
+                return
+            fechaSalida         = datetime.datetime.now().strftime("%d-%m-%Y %H:%M")
+            vehiculo.estadia[2] = fechaSalida
+            vehiculo.pago       = (montoEstimado, tipoPagoElegido)
+            contenidoQR  = placa + "-" + str(marca) + "-" + str(tipo) + "-" + fechaEntrada
+            fechaFormato = fechaSalida.replace(":", "").replace(" ", "_").replace("-", "")
+            nombreBase   = "factura_#" + placa + "_" + fechaFormato
+            rutaQR       = nombreBase + ".png"
+            rutaPDF      = nombreBase + ".pdf"
+            try:
+                crearQR(contenidoQR, rutaQR)
+                crearFacturaPDF(vehiculo, rutaQR, rutaPDF)
+                print("Factura generada:", rutaPDF)
+            except Exception as e:
+                print("Error generando factura:", e)
+            guardarBD(baseDatos)
+            pagado[0] = True
+            messagebox.showinfo("Pago realizado",
+                                "Pago registrado correctamente.\nFactura: " + rutaPDF)
+            ventPago.destroy()
+            ventana.destroy()
+        tk.Button(marcoPago, text="Confirmar pago", width=20,
+                  command=confirmarPago).grid(row=len(opcionesPago)+2, column=0, pady=(6, 2))
+        tk.Button(marcoPago, text="Cancelar", width=20,
+                  command=ventPago.destroy).grid(row=len(opcionesPago)+3, column=0, pady=2)
+        ventPago.wait_window()
+    tk.Button(marco, text="Pagar", width=22,
+              command=accionPagar).grid(row=7, column=0, columnspan=2, pady=(0, 4))
+    tk.Button(marco, text="Regresar", width=22,
+              command=ventana.destroy).grid(row=8, column=0, columnspan=2, pady=(0, 4))
+    ventana.wait_window()
+    return pagado[0]
     
 def calcularEspacios(config):
     """
@@ -358,47 +578,3 @@ def construirComando(btn, ubicacion, ventanaPadre, baseDatos, config, tipoEspaci
         else:
             estacionarVehiculo(btn, ubicacion, ventanaPadre, baseDatos, config, tipoEspacio)
     return comando
-
-def obtenerColorEspacio(ubicacion, baseDatos):
-    """
-    Funcionalidad:
-        Determina si un espacio esta ocupado o libre buscando en la BD.
-        Un espacio esta ocupado si tiene fecha de salida vacia.
-    Entrada:
-        - ubicacion (str): codigo del espacio (ej: G-001, E-001, EL-001)
-        - baseDatos (list): lista de objetos Estacionamiento
-    Salida:
-        - color (str): "red" si ocupado, "green" si libre
-        - vehiculo (Estacionamiento|None): objeto si esta ocupado, None si libre
-    """
-    for vehiculo in baseDatos:
-        if vehiculo.estadia[0] == ubicacion and vehiculo.estadia[2] == "":
-            return "red", vehiculo
-    return "green", None
- 
-def construirComando(btn, ubicacion, ventanaPadre, baseDatos, config, tipoEspacio):
-    """
-    Funcionalidad:
-        Construye la funcion que ejecuta el clic en un espacio del grid.
-    Entrada:
-        - btn (tk.Button): boton del espacio en el grid
-        - ubicacion (str): codigo del espacio
-        - ventanaPadre (tk.Toplevel): ventana del parqueo
-        - baseDatos (list): lista de objetos Estacionamiento
-        - config (dict): configuracion del parqueo
-        - tipoEspacio (int): tipo del espacio (tipoGeneral, tipoEspecial, tipoElectrico)
-    Salida:
-        - comando (function): funcion lista para asignar al boton
-    """
-    def comando():
-        color, vehiculo = obtenerColorEspacio(ubicacion, baseDatos)
-        if color == "red":
-            pagado = observarEspacio(ventanaPadre, vehiculo, baseDatos, config)
-            if pagado:
-                btn.config(bg="green")
-        else:
-            registrado = estacionarVehiculo(ventanaPadre, ubicacion, tipoEspacio, baseDatos, config)
-            if registrado:
-                btn.config(bg="red")
-    return comando
- 
