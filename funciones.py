@@ -768,3 +768,71 @@ def construirComando(btn, ubicacion, ventanaPadre, baseDatos, config, tipoEspaci
         else:
             estacionarVehiculo(btn, ubicacion, ventanaPadre, baseDatos, config, tipoEspacio)
     return comando
+ 
+def verEstacionamiento(ventanaPadre, baseDatos, config):
+    """
+    Funcionalidad:
+        Abre una ventana con el grid grafico del parqueo.
+        Muestra cada espacio en rojo (ocupado) o verde (libre).
+        Al hacer clic en un espacio abre observarEspacio o estacionarVehiculo
+        segun corresponda.
+    Entrada: Ventana principal, lista de objetos Estacionamiento y configuracion del parqueo
+    Salida:
+        - baseDatos (list): lista actualizada tras posibles cambios
+    """
+    especiales, tieneElectrico, generales = calcularEspacios(config)
+
+    ventanaParqueo = tk.Toplevel(ventanaPadre)
+    ventanaParqueo.title("Ver Estacionamiento")
+    ventanaParqueo.resizable(False, False)
+
+    marco = tk.Frame(ventanaParqueo, padx=20, pady=15)
+    marco.pack()
+
+    tk.Label(marco, text="Estacionamiento", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=10, pady=(0, 2))
+    tk.Label(marco, text="Verde = Libre     |     Rojo = Ocupado", font=("Arial", 9), fg="gray").grid(row=1, column=0, columnspan=10, pady=(0, 8))
+    marcoCasetilla = tk.Frame(marco, bd=2, relief="ridge")
+    marcoCasetilla.grid(row=2, column=0, columnspan=4, padx=4, pady=4, sticky="w")
+    tk.Label(marcoCasetilla, text="CASETILLA DE COBRO", font=("Arial", 7, "bold"), bg="lightblue", width=16, height=2).pack()
+    marcoBano = tk.Frame(marco, bd=2, relief="ridge")
+    marcoBano.grid(row=2, column=4, columnspan=4, padx=4, pady=4, sticky="w")
+    tk.Label(marcoBano, text="BANO SANITARIO", font=("Arial", 7, "bold"), bg="lightyellow", width=14, height=2).pack()
+    tk.Label(marco, text="Espacios Especiales:", font=("Arial", 9, "bold")).grid(row=3, column=0, columnspan=10, sticky="w", pady=(8, 2))
+
+    for i in range(1, especiales + 1):
+        ubicacion = "ESP-" + str(i)
+        color, _ = obtenerColorEspacio(ubicacion, baseDatos)
+        btn = tk.Button(marco, text="ESP\n" + str(i), bg=color, fg="white", width=5, height=2, font=("Arial", 7, "bold"))
+        btn.grid(row=4, column=i - 1, padx=3, pady=3)
+        btn.config(command=construirComando(btn, ubicacion, ventanaParqueo, baseDatos, config, TIPO_ESPECIAL))
+    filaActual = 5
+    if tieneElectrico:
+        tk.Label(marco, text="Espacio Electrico:", font=("Arial", 9, "bold")).grid(
+            row=filaActual, column=0, columnspan=10, sticky="w", pady=(8, 2))
+        filaActual = filaActual + 1
+        ubicacionEl = "EL-001"
+        colorEl, _ = obtenerColorEspacio(ubicacionEl, baseDatos)
+        btnEl = tk.Button(marco, text="EL\n001", bg=colorEl, fg="white", width=5, height=2, font=("Arial", 7, "bold"))
+        btnEl.grid(row=filaActual, column=0, padx=3, pady=3)
+        btnEl.config(command=construirComando(btnEl, ubicacionEl, ventanaParqueo, baseDatos, config, TIPO_ELECTRICO))
+        filaActual = filaActual + 1
+    tk.Label(marco, text="Espacios Generales:", font=("Arial", 9, "bold")).grid(row=filaActual, column=0, columnspan=10, sticky="w", pady=(8, 2))
+    filaActual = filaActual + 1
+
+    COLUMNAS = 10
+    col = 0
+    fila = filaActual
+    for i in range(1, generales + 1):
+        ubicacion = "G-" + str(i).zfill(3)
+        color, _ = obtenerColorEspacio(ubicacion, baseDatos)
+        btn = tk.Button(marco, text="G\n" + str(i).zfill(3), bg=color, fg="white", width=5, height=2, font=("Arial", 7, "bold"))
+        btn.grid(row=fila, column=col, padx=3, pady=3)
+        btn.config(command=construirComando(btn, ubicacion, ventanaParqueo, baseDatos, config, TIPO_GENERAL))
+        col = col + 1
+        if col >= COLUMNAS:
+            col = 0
+            fila = fila + 1
+    tk.Button(marco, text="Regresar", width=20,command=ventanaParqueo.destroy).grid(row=fila + 1, column=0, columnspan=10, pady=(12, 0))
+
+    ventanaParqueo.wait_window()
+    return baseDatos
