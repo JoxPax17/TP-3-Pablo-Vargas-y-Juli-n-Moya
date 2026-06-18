@@ -532,6 +532,196 @@ def observarEspacio(ventanaPadre, vehiculo, baseDatos, config):
               command=ventana.destroy).grid(row=8, column=0, columnspan=2, pady=(0, 4))
     ventana.wait_window()
     return pagado[0]
+
+def obtenerUbicacionesOcupadas(baseDatos, tipoEspacio):
+    """
+    Funcionalidad: Retorna la lista de ubicaciones actualmente ocupadas para un tipo de espacio.
+    Entrada: baseDatos (list): lista de objetos Estacionamiento, tipoEspacio (int): tipo de espacio a consultar
+    Salida: ocupadas (list): lista de strings con las ubicaciones ocupadas
+    """
+    ocupadas = []
+    for obj in baseDatos:
+        if obj.tipoEspacio == tipoEspacio:
+            ubicacion, _, salida = obj.estadia
+            if salida == "":
+                ocupadas.append(ubicacion)
+    return ocupadas
+ 
+def generarSiguienteUbicacion(baseDatos, tipoEspacio, config):
+    """
+    Funcionalidad: Determina la siguiente ubicacion libre disponible para el tipo de espacio solicitado, asignando un codigo secuencial (G-XXX, E-XXX, EL-001).
+    Entrada: baseDatos (list): lista de objetos Estacionamiento, tipoEspacio (int): tipo de espacio requerido, config (dict): configuracion del parqueo
+    Salida: 1ubicacion (str): codigo de ubicacion libre, o "" si no hay disponibles
+    """
+    ocupadas = obtenerUbicacionesOcupadas(baseDatos, tipoEspacio)
+    if tipoEspacio == tipoElectrico:
+        candidato = "EL-001"
+        if candidato not in ocupadas:
+            return candidato
+        return ""
+    if tipoEspacio == tipoEspecial:
+        prefijo    = "E-"
+        tamano     = config["tamano"]
+        especiales = int(tamano * 0.05)
+        if tamano * 0.05 > especiales:
+            especiales = especiales + 1
+        if especiales < 2:
+            especiales = 2
+        limite = especiales
+    else:
+        prefijo = "G-"
+        limite  = config["tamano"]
+    contador = 1
+    while contador <= limite:
+        candidato = prefijo + str(contador).zfill(3)
+        if candidato not in ocupadas:
+            return candidato
+        contador = contador + 1
+    return ""
+ 
+def siguienteIdBD(baseDatos):
+    """
+    Funcionalidad: Calcula el siguiente id disponible para un nuevo objeto Estacionamiento.
+    Entrada: baseDatos (list): lista de objetos Estacionamiento
+    Salida: nuevoId (int): id siguiente al mayor existente, o 1 si la BD esta vacia
+    """
+    if len(baseDatos) == 0:
+        return 1
+    maximo = 0
+    for obj in baseDatos:
+        if obj.id > maximo:
+            maximo = obj.id
+    return maximo + 1
+ 
+ 
+def estacionarVehiculo(ventanaPadre, ubicacionLibre, tipoEspacio, baseDatos, config):
+    """
+    Funcionalidad: Abre una ventana Toplevel para registrar un vehiculo nuevo en el parqueo. Solicita placa, marca, color y tipo. Asigna ubicacion automaticamente. Genera voucher PDF con QR y guarda la BD actualizada en disco.
+    Entrada: ventanaPadre (tk.Toplevel): ventana del grid de estacionamiento, ubicacionLibre (str): ubicacion del espacio verde sobre el que se hizo clic, tipoEspacio (int): tipo del espacio (tipoGeneral, tipoEspecial, tipoElectrico), baseDatos (list): lista de objetos Estacionamiento, config (dict): configuracion del parqueo
+    Salida: estacionado (bool): True si el vehiculo fue registrado exitosamente
+    """
+    estacionado = [False]
+ 
+    ubicacion = generarSiguienteUbicacion(baseDatos, tipoEspacio, config)
+    if ubicacion == "":
+        messagebox.showwarning("Sin espacio", "No hay espacios disponibles para este tipo.")
+        return False
+ 
+    ventana = tk.Toplevel(ventanaPadre)
+    ventana.title("Estacionar Vehiculo")
+    ventana.resizable(False, False)
+ 
+    marco = tk.Frame(ventana, padx=25, pady=20)
+    marco.pack()
+ 
+    tk.Label(marco, text="Registrar Vehiculo",
+             font=("Arial", 13, "bold")).grid(row=0, column=0, columnspan=2, pady=(0, 4))
+    tk.Label(marco, text="Monto por hora: CRC " + str(config.get("montoPorHora", 0)),
+             font=("Arial", 10), fg="darkblue").grid(row=1, column=0, columnspan=2, pady=(0, 10))
+ 
+    tk.Label(marco, text="Ubicacion:", anchor="w", width=16).grid(row=2, column=0, sticky="w", pady=4)
+    entryUbicacion = tk.Entry(marco, width=25)
+    entryUbicacion.insert(0, ubicacion)
+    entryUbicacion.config(state="disabled", disabledforeground="black")
+    entryUbicacion.grid(row=2, column=1, pady=4)
+ 
+    tk.Label(marco, text="Placa:", anchor="w", width=16).grid(row=3, column=0, sticky="w", pady=4)
+    entryPlaca = tk.Entry(marco, width=25)
+    entryPlaca.grid(row=3, column=1, pady=4)
+ 
+    tk.Label(marco, text="Marca:", anchor="w", width=16).grid(row=4, column=0, sticky="w", pady=4)
+    varMarca   = tk.StringVar()
+    comboMarca = ttk.Combobox(marco, textvariable=varMarca,
+                               values=marcasDisponibles, state="readonly", width=22)
+    comboMarca.current(0)
+    comboMarca.grid(row=4, column=1, pady=4)
+ 
+    tk.Label(marco, text="Color:", anchor="w", width=16).grid(row=5, column=0, sticky="w", pady=4)
+    varColor   = tk.StringVar()
+    comboColor = ttk.Combobox(marco, textvariable=varColor,
+                               values=coloresDisponibles, state="readonly", width=22)
+    comboColor.current(0)
+    comboColor.grid(row=5, column=1, pady=4)
+ 
+    dictTiposVehiculo = {1: "Sedan", 2: "SUV", 3: "Pickup", 4: "Van", 5: "Deportivo"}
+    opcionesTipo      = []
+    for k, v in dictTiposVehiculo.items():
+        opcionesTipo.append(str(k) + " - " + v)
+ 
+    tk.Label(marco, text="Tipo:", anchor="w", width=16).grid(row=6, column=0, sticky="w", pady=4)
+    varTipo   = tk.StringVar()
+    comboTipo = ttk.Combobox(marco, textvariable=varTipo,
+                              values=opcionesTipo, state="readonly", width=22)
+    comboTipo.current(0)
+    comboTipo.grid(row=6, column=1, pady=4)
+ 
+    horaActual = datetime.datetime.now().strftime("%d-%m-%Y %H:%M")
+    tk.Label(marco, text="Hora de entrada:", anchor="w", width=16).grid(row=7, column=0, sticky="w", pady=4)
+    entryHora = tk.Entry(marco, width=25)
+    entryHora.insert(0, horaActual)
+    entryHora.config(state="disabled", disabledforeground="black")
+    entryHora.grid(row=7, column=1, pady=4)
+ 
+    tk.Frame(marco, height=2, bd=1, relief="sunken").grid(
+        row=8, column=0, columnspan=2, sticky="ew", pady=10)
+ 
+    def accionEstacionar():
+        """
+        Funcionalidad:Valida los campos, confirma la accion, crea el objeto Estacionamiento, lo agrega a la BD, genera el voucher PDF con QR y guarda en disco.
+        Entrada: ninguna (usa variables del closure)
+        Salida:ninguna
+        """
+        placa = entryPlaca.get().strip().upper()
+        if placa == "":
+            messagebox.showwarning("Campo vacio", "Debe ingresar la placa del vehiculo.")
+            return
+        tipoStr  = varTipo.get()
+        tipoInt  = int(tipoStr.split(" - ")[0])
+        marca    = varMarca.get()
+        color    = varColor.get()
+        confirmacion = messagebox.askyesno("Confirmar estacionamiento",
+            "Placa: " + placa + "\n" +
+            "Marca: " + marca + "\n" +
+            "Color: " + color + "\n" +
+            "Ubicacion: " + ubicacion + "\n\n" +
+            "¿Confirma el estacionamiento?")
+        if not confirmacion:
+            return
+        nuevoId  = siguienteIdBD(baseDatos)
+        nuevoObj = Estacionamiento(id = nuevoId,
+            placa = placa,
+            marca = marca,
+            color = color,
+            tipo = tipoInt,
+            tipoEspacio = tipoEspacio,
+            ubicacion = ubicacion,
+            fechaHoraEntrada = horaActual,
+            fechaHoraSalida = "",
+            monto = 0,
+            tipoPago = 0)
+        baseDatos.append(nuevoObj)
+        contenidoQR = placa + "-" + marca + "-" + str(tipoInt) + "-" + horaActual
+        fechaFormato = horaActual.replace(":", "").replace(" ", "_").replace("-", "")
+        nombreBase = "voucher_#" + placa + "_" + fechaFormato
+        rutaQR = nombreBase + ".png"
+        rutaPDF = nombreBase + ".pdf"
+        try:
+            crearQR(contenidoQR, rutaQR)
+            crearVoucherPDF(nuevoObj, rutaQR, rutaPDF)
+            print("Voucher generado:", rutaPDF)
+        except Exception as e:
+            print("Error generando voucher:", e)
+        guardarBD(baseDatos)
+        estacionado[0] = True
+        messagebox.showinfo("Registrado",
+                            "Vehiculo estacionado en " + ubicacion + "\nVoucher: " + rutaPDF)
+        ventana.destroy()
+    tk.Button(marco, text="Estacionar", width=22,
+              command=accionEstacionar).grid(row=9, column=0, columnspan=2, pady=(0, 4))
+    tk.Button(marco, text="Regresar", width=22,
+              command=ventana.destroy).grid(row=10, column=0, columnspan=2, pady=(0, 4))
+    ventana.wait_window()
+    return estacionado[0]
     
 def calcularEspacios(config):
     """
