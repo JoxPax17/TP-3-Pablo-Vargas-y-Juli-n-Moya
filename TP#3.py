@@ -128,8 +128,6 @@ def accionSalir():
     """
     messagebox.showinfo("Hasta pronto", "Gracias por usar el Sistema de Parqueo.")
     ventana.destroy()
-
-
 ventana = tk.Tk()
 ventana.title("Sistema de Estacionamiento")
 ventana.resizable(False, False)
@@ -138,26 +136,21 @@ marco.pack()
 tk.Label(marco, text="Sistema de Estacionamiento", font=("Arial", 16, "bold")).grid(row=0, column=0, pady=(0, 4))
 tk.Label(marco, text="Administracion de Parqueo", font=("Arial", 10)).grid(row=1, column=0, pady=(0, 14))
 tk.Frame(marco, height=2, bd=1, relief="sunken").grid(row=2, column=0, sticky="ew", pady=(0, 10))
-
 opcionesMenu = [
-    ("1. Obtener vehiculos",   accionObtenerVehiculos),
+    ("1. Obtener vehiculos", accionObtenerVehiculos),
     ("2. Ver estacionamiento", accionVerEstacionamiento),
-    ("3. Reportes",            accionReportes),
-    ("4. Configuracion",       accionConfiguracion),
-    ("5. Acerca de",           accionAcercaDe),
-    ("6. Salir",               accionSalir),
-]
-
+    ("3. Reportes", accionReportes),
+    ("4. Configuracion", accionConfiguracion),
+    ("5. Acerca de", accionAcercaDe),
+    ("6. Salir", accionSalir),]
 botonesMenu = []
 for i, (texto, comando) in enumerate(opcionesMenu):
     btn = tk.Button(marco, text=texto, width=32, anchor="w", padx=8, command=comando)
     btn.grid(row=i+3, column=0, pady=3)
     botonesMenu.append(btn)
-
 btnObtenerVehiculos = botonesMenu[0]
 btnVerEstacionamiento = botonesMenu[1]
 btnReportes = botonesMenu[2]
-
 cargarDatos()
 actualizarBotones()
 ventana.mainloop()
