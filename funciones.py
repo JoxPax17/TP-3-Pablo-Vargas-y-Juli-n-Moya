@@ -119,30 +119,6 @@ def calcularTopeMasivo(config):
     tope = disponibles - reserva
     return tope
  
-def calcularEspacios(config):
-    """
-    Funcionalidad:
-        Calcula la cantidad de espacios generales, especiales y electrico
-        segun la configuracion del parqueo.
-    Entrada:
-        - config (dict): configuracion con tamano y tieneElectrico
-    Salida:
-        - especiales (int): cantidad de espacios especiales
-        - tieneElectrico (bool): si el parqueo tiene espacio electrico
-        - generales (int): cantidad de espacios generales disponibles
-    """
-    tamano = config["tamano"]
-    especiales = int(tamano * 0.05)
-    if tamano * 0.05 > especiales:
-        especiales = especiales + 1
-    if especiales < 2:
-        especiales = 2
-    tieneElectrico = config["tieneElectrico"]
-    generales = tamano - especiales
-    if tieneElectrico:
-        generales = generales - 1
-    return especiales, tieneElectrico, generales
- 
 def generarFechaHoraEntrada():
     """
     Funcionalidad:
@@ -753,7 +729,6 @@ def obtenerColorEspacio(ubicacion, baseDatos):
             return "red", vehiculo
     return "green", None
 
-
 def construirComando(btn, ubicacion, ventanaPadre, baseDatos, config, tipoEspacio):
     """
     Funcionalidad:Construye la funcion que ejecuta el clic en un espacio del grid
@@ -764,11 +739,15 @@ def construirComando(btn, ubicacion, ventanaPadre, baseDatos, config, tipoEspaci
     def comando():
         color, vehiculo = obtenerColorEspacio(ubicacion, baseDatos)
         if color == "red":
-            observarEspacio(btn, ubicacion, ventanaPadre, baseDatos, config, vehiculo)
+            pagado = observarEspacio(ventanaPadre, vehiculo, baseDatos, config)
+            if pagado:
+                btn.config(bg="green")
         else:
-            estacionarVehiculo(btn, ubicacion, ventanaPadre, baseDatos, config, tipoEspacio)
+            registrado = estacionarVehiculo(ventanaPadre, ubicacion, tipoEspacio, baseDatos, config)
+            if registrado:
+                btn.config(bg="red")
     return comando
- 
+
 def verEstacionamiento(ventanaPadre, baseDatos, config):
     """
     Funcionalidad:
@@ -804,7 +783,7 @@ def verEstacionamiento(ventanaPadre, baseDatos, config):
         color, _ = obtenerColorEspacio(ubicacion, baseDatos)
         btn = tk.Button(marco, text="ESP\n" + str(i), bg=color, fg="white", width=5, height=2, font=("Arial", 7, "bold"))
         btn.grid(row=4, column=i - 1, padx=3, pady=3)
-        btn.config(command=construirComando(btn, ubicacion, ventanaParqueo, baseDatos, config, TIPO_ESPECIAL))
+        btn.config(command=construirComando(btn, ubicacion, ventanaParqueo, baseDatos, config, tipoEspecial))
     filaActual = 5
     if tieneElectrico:
         tk.Label(marco, text="Espacio Electrico:", font=("Arial", 9, "bold")).grid(
@@ -814,7 +793,7 @@ def verEstacionamiento(ventanaPadre, baseDatos, config):
         colorEl, _ = obtenerColorEspacio(ubicacionEl, baseDatos)
         btnEl = tk.Button(marco, text="EL\n001", bg=colorEl, fg="white", width=5, height=2, font=("Arial", 7, "bold"))
         btnEl.grid(row=filaActual, column=0, padx=3, pady=3)
-        btnEl.config(command=construirComando(btnEl, ubicacionEl, ventanaParqueo, baseDatos, config, TIPO_ELECTRICO))
+        btnEl.config(command=construirComando(btnEl, ubicacionEl, ventanaParqueo, baseDatos, config, tipoElectrico))
         filaActual = filaActual + 1
     tk.Label(marco, text="Espacios Generales:", font=("Arial", 9, "bold")).grid(row=filaActual, column=0, columnspan=10, sticky="w", pady=(8, 2))
     filaActual = filaActual + 1
@@ -827,7 +806,7 @@ def verEstacionamiento(ventanaPadre, baseDatos, config):
         color, _ = obtenerColorEspacio(ubicacion, baseDatos)
         btn = tk.Button(marco, text="G\n" + str(i).zfill(3), bg=color, fg="white", width=5, height=2, font=("Arial", 7, "bold"))
         btn.grid(row=fila, column=col, padx=3, pady=3)
-        btn.config(command=construirComando(btn, ubicacion, ventanaParqueo, baseDatos, config, TIPO_GENERAL))
+        btn.config(command=construirComando(btn, ubicacion, ventanaParqueo, baseDatos, config, tipoGeneral))
         col = col + 1
         if col >= COLUMNAS:
             col = 0
