@@ -701,24 +701,16 @@ def construirComando(btn, ubicacion, ventanaPadre, baseDatos, config, tipoEspaci
 
 def verEstacionamiento(ventanaPadre, baseDatos, config):
     """
-    Funcionalidad:
-        Abre una ventana con el grid grafico del parqueo.
-        Muestra cada espacio en rojo (ocupado) o verde (libre).
-        Al hacer clic en un espacio abre observarEspacio o estacionarVehiculo
-        segun corresponda.
+    Funcionalidad: Abre una ventana con el grid grafico del parqueo. Muestra cada espacio en rojo (ocupado) o verde (libre). Al hacer clic en un espacio abre observarEspacio o estacionarVehiculo segun corresponda.
     Entrada: Ventana principal, lista de objetos Estacionamiento y configuracion del parqueo
-    Salida:
-        - baseDatos (list): lista actualizada tras posibles cambios
+    Salida: baseDatos (list): lista actualizada tras posibles cambios
     """
     especiales, tieneElectrico, generales = calcularEspacios(config)
-
     ventanaParqueo = tk.Toplevel(ventanaPadre)
     ventanaParqueo.title("Ver Estacionamiento")
     ventanaParqueo.resizable(False, False)
-
     marco = tk.Frame(ventanaParqueo, padx=20, pady=15)
     marco.pack()
-
     tk.Label(marco, text="Estacionamiento", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=10, pady=(0, 2))
     tk.Label(marco, text="Verde = Libre     |     Rojo = Ocupado", font=("Arial", 9), fg="gray").grid(row=1, column=0, columnspan=10, pady=(0, 8))
     marcoCasetilla = tk.Frame(marco, bd=2, relief="ridge")
@@ -728,7 +720,6 @@ def verEstacionamiento(ventanaPadre, baseDatos, config):
     marcoBano.grid(row=2, column=4, columnspan=4, padx=4, pady=4, sticky="w")
     tk.Label(marcoBano, text="BANO SANITARIO", font=("Arial", 7, "bold"), bg="lightyellow", width=14, height=2).pack()
     tk.Label(marco, text="Espacios Especiales:", font=("Arial", 9, "bold")).grid(row=3, column=0, columnspan=10, sticky="w", pady=(8, 2))
-
     for i in range(1, especiales + 1):
         ubicacion = "ESP-" + str(i)
         color, _ = obtenerColorEspacio(ubicacion, baseDatos)
@@ -748,8 +739,7 @@ def verEstacionamiento(ventanaPadre, baseDatos, config):
         filaActual = filaActual + 1
     tk.Label(marco, text="Espacios Generales:", font=("Arial", 9, "bold")).grid(row=filaActual, column=0, columnspan=10, sticky="w", pady=(8, 2))
     filaActual = filaActual + 1
-
-    COLUMNAS = 10
+    columnas = 10
     col = 0
     fila = filaActual
     for i in range(1, generales + 1):
@@ -759,10 +749,121 @@ def verEstacionamiento(ventanaPadre, baseDatos, config):
         btn.grid(row=fila, column=col, padx=3, pady=3)
         btn.config(command=construirComando(btn, ubicacion, ventanaParqueo, baseDatos, config, tipoGeneral))
         col = col + 1
-        if col >= COLUMNAS:
+        if col >= columnas:
             col = 0
             fila = fila + 1
     tk.Button(marco, text="Regresar", width=20,command=ventanaParqueo.destroy).grid(row=fila + 1, column=0, columnspan=10, pady=(12, 0))
-
     ventanaParqueo.wait_window()
     return baseDatos
+
+def cerrarVehiculosPendientes(baseDatos, config):
+    """
+    Funcionalidad: Recorre la BD y cierra todos los vehiculos que no tienen fecha de salida, asignandoles un tipo de pago aleatorio, calculando su monto y generando su factura PDF con QR.
+    Entrada: baseDatos (list): lista de objetos Estacionamiento, config (dict): configuracion del parqueo (tiempoGracia, montoPorHora)
+    Salida: ninguna (modifica los objetos directamente en la lista)
+    """
+    for vehiculo in baseDatos:
+        _, fechaEntrada, fechaSalida = vehiculo.estadia
+        if fechaSalida == "":
+            tipoPagoAleatorio = random.randint(pagoEfectivo, pagoTarjeta)
+            montoCalculado = calcularMonto(
+                fechaEntrada,
+                config.get("tiempoGracia", 0),
+                config.get("montoPorHora", 0))
+            fechaSalidaAhora = datetime.datetime.now().strftime("%d-%m-%Y %H:%M")
+            vehiculo.estadia[2] = fechaSalidaAhora
+            vehiculo.pago = (montoCalculado, tipoPagoAleatorio)
+ 
+            placa, marca, color, tipo = vehiculo.info
+            contenidoQR = placa + "-" + str(marca) + "-" + str(tipo) + "-" + fechaEntrada
+            fechaFormato = fechaSalidaAhora.replace(":", "").replace(" ", "_").replace("-", "")
+            nombreBase = "factura_#" + placa + "_" + fechaFormato
+            rutaQR = nombreBase + ".png"
+            rutaPDF = nombreBase + ".pdf"
+            try:
+                crearQR(contenidoQR, rutaQR)
+                crearFacturaPDF(vehiculo, rutaQR, rutaPDF)
+                print("Factura automatica generada:", rutaPDF)
+            except Exception as e:
+                print("Error generando factura automatica para", placa, ":", e)
+ 
+def calcularTotalesPorTipo(baseDatos):
+    """
+    Funcionalidad: Calcula el monto total recaudado por cada tipo de pago.
+    Entrada: baseDatos (list): lista de objetos Estacionamiento
+    Salida: totales (dict): diccionario con claves pagoEfectivo/pagoSinpe/pagoTarjeta y sus montos acumulados como valores
+    """
+    totales = {pagoEfectivo: 0, pagoSinpe: 0, pagoTarjeta: 0}
+    for vehiculo in baseDatos:
+        monto, tipoPago = vehiculo.pago
+        if tipoPago in totales:
+            totales[tipoPago] = totales[tipoPago] + monto
+    return totales
+ 
+def generarCierrePDF(baseDatos):
+    """
+    Funcionalidad: Genera el archivo cierreDiario.pdf con titulo, fecha, tabla completa de todos los vehiculos, subtotales por tipo de pago y total acumulado. Usa obligatoriamente 3 colores y 3 tamanios de letra.
+    Entrada: baseDatos (list): lista de objetos Estacionamiento con toda la info completa
+    Salida: ninguna (escribe el archivo en disco)
+    """
+    pdf = FPDF(orientation="L", unit="mm", format="A4")
+    pdf.add_page()
+    fechaHoy = datetime.datetime.now().strftime("%d/%m/%Y")
+    pdf.set_font("Arial", "B", 18)     #Titulo principal (color azul, tamaño 18
+    pdf.set_text_color(32, 58, 120)
+    pdf.cell(0, 12, "CIERRE DIARIO DE ESTACIONAMIENTO", ln=True, align="C")
+    pdf.set_font("Arial", "B", 11)   #Fecha (color verde, tamaño 11)
+    pdf.set_text_color(20, 110, 60)
+    pdf.cell(0, 7, "Fecha: " + fechaHoy, ln=True, align="C")
+    pdf.ln(4)
+    pdf.set_font("Arial", "B", 11)  #Encabezado de tabla (color verde, tamaño 11)
+    pdf.set_fill_color(20, 110, 60)
+    pdf.set_text_color(255, 255, 255)
+    anchos = [30, 35, 42, 42, 35, 30]
+    encabezados = ["Ubicacion", "Placa", "Hora Entrada", "Hora Salida", "Tipo Pago", "Monto (CRC)"]
+    for i in range(len(encabezados)):
+        pdf.cell(anchos[i], 9, encabezados[i], border=1, align="C", fill=True)
+    pdf.ln()
+    pdf.set_font("Arial", "", 9)    #Filas de datos (color negro, tamaño 9)
+    pdf.set_text_color(0, 0, 0)
+    colorFilaPar  = (240, 240, 240)
+    colorFilaImpar = (255, 255, 255)
+    contadorFila  = 0
+    for vehiculo in baseDatos:
+        placa, _, _, _           = vehiculo.info
+        ubicacion, fechaEnt, fechaSal = vehiculo.estadia
+        monto, tipoPago               = vehiculo.pago
+        if contadorFila % 2 == 0:
+            pdf.set_fill_color(colorFilaImpar[0], colorFilaImpar[1], colorFilaImpar[2])
+        else:
+            pdf.set_fill_color(colorFilaPar[0], colorFilaPar[1], colorFilaPar[2])
+        pdf.cell(anchos[0], 8, ubicacion,                    border=1, align="C", fill=True)
+        pdf.cell(anchos[1], 8, placa,                        border=1, align="C", fill=True)
+        pdf.cell(anchos[2], 8, fechaEnt,                     border=1, align="C", fill=True)
+        pdf.cell(anchos[3], 8, fechaSal if fechaSal != "" else "---", border=1, align="C", fill=True)
+        pdf.cell(anchos[4], 8, obtenerNombrePago(tipoPago),  border=1, align="C", fill=True)
+        pdf.cell(anchos[5], 8, str(monto),                   border=1, align="C", fill=True)
+        pdf.ln()
+        contadorFila = contadorFila + 1
+    pdf.ln(5)
+    totales  = calcularTotalesPorTipo(baseDatos) #Subtotales por tipo de pago (color verde, tamaño 9)
+    totalDia = 0
+    pdf.set_font("Arial", "B", 9)
+    pdf.set_text_color(20, 110, 60)
+    tiposPago = [(pagoEfectivo, "Efectivo"),
+        (pagoSinpe,    "SINPE"),
+        (pagoTarjeta,  "Tarjeta"),]
+    for tipoClave, tipoNombre in tiposPago:
+        montoTipo = totales[tipoClave]
+        totalDia  = totalDia + montoTipo
+        pdf.cell(0, 7,
+                 "Total recaudado en " + tipoNombre + ": CRC " + str(montoTipo),
+                 ln=True, align="R")
+    pdf.ln(2)
+    pdf.set_font("Arial", "B", 11)  #Total acumulado del dia (color rojo, tamaño 11)
+    pdf.set_text_color(180, 30, 30)
+    pdf.cell(0, 9,
+             "Total acumulado del dia: CRC " + str(totalDia),
+             ln=True, align="R")
+    pdf.output("cierreDiario.pdf")
+    print("cierreDiario.pdf generado exitosamente.")
