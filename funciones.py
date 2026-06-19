@@ -867,3 +867,29 @@ def generarCierrePDF(baseDatos):
              ln=True, align="R")
     pdf.output("cierreDiario.pdf")
     print("cierreDiario.pdf generado exitosamente.")
+
+def cierreDiario(baseDatos, config):
+    """
+    Funcionalidad: Cierra todos los vehiculos pendientes de pago con tipo de pago aleatorio, genera sus facturas automaticamente, produce el reporte cierreDiario.pdf con tabla completa, subtotales por tipo de pago y total acumulado del dia, usando 3 colores y 3 tamanios de letra obligatorios. Guarda la BD actualizada.
+    Entrada: baseDatos (list): lista de objetos Estacionamiento, config (dict): configuracion del parqueo (tiempoGracia, montoPorHora)
+    Salida: ninguna
+    """
+    if len(baseDatos) == 0:
+        messagebox.showwarning("Sin datos", "No hay vehiculos en la base de datos.")
+        return
+    confirmacion = messagebox.askyesno(
+        "Cierre diario",
+        "Se cerraran todos los vehiculos pendientes de pago.\n"
+        "Se generaran facturas automaticas y el reporte PDF.\n\n"
+        "¿Desea continuar?")
+    if not confirmacion:
+        return
+    cerrarVehiculosPendientes(baseDatos, config)
+    guardarBD(baseDatos)
+    try:
+        generarCierrePDF(baseDatos)
+        messagebox.showinfo("Cierre completado",
+                            "Cierre diario realizado correctamente.\n"
+                            "Reporte guardado en: cierreDiario.pdf")
+    except Exception as e:
+        messagebox.showerror("Error", "Error al generar el PDF del cierre:\n" + str(e))
