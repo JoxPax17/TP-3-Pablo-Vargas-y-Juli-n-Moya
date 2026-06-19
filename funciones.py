@@ -893,3 +893,34 @@ def cierreDiario(baseDatos, config):
                             "Reporte guardado en: cierreDiario.pdf")
     except Exception as e:
         messagebox.showerror("Error", "Error al generar el PDF del cierre:\n" + str(e))
+
+def construirSeccionXML(lineas, nombreSeccion, lista):
+    """
+    Funcionalidad: Agrega al listado de lineas XML una seccion con todos los vehiculos de la lista recibida, de forma plana.
+    Entrada: Lista de strings con el XML parcial, nombre de la seccion (Efectivo, SINPE, Tarjeta), lista de objetos del estacionamiento del tipo de pago
+    Salida: Lista actualizada con la seccion agregada
+    """
+    lineas.append("    <" + nombreSeccion + ">")
+
+    for vehiculo in lista:
+        placa, marca, color, tipo = vehiculo.info
+        ubicacion, fechaEntrada, fechaSalida = vehiculo.estadia
+        monto, tipoPago = vehiculo.pago
+     
+        lineas.append("        <vehiculo>")
+        lineas.append("            <id>" + str(vehiculo.id) + "</id>")
+        lineas.append("            <placa>" + str(placa) + "</placa>")
+        lineas.append("            <marca>" + str(marca) + "</marca>")
+        lineas.append("            <color>" + str(color) + "</color>")
+        lineas.append("            <tipo>" + obtenerNombreTipo(tipo) + "</tipo>")
+        lineas.append("            <tipoEspacio>" + str(vehiculo.tipoEspacio) + "</tipoEspacio>")
+        lineas.append("            <ubicacion>" + str(ubicacion) + "</ubicacion>")
+        lineas.append("            <fechaEntrada>" + str(fechaEntrada) + "</fechaEntrada>")
+        lineas.append("            <fechaSalida>" + str(fechaSalida) + "</fechaSalida>")
+        lineas.append("            <monto>" + str(monto) + "</monto>")
+        lineas.append("            <tipoPago>" + obtenerNombrePago(tipoPago) + "</tipoPago>")
+        lineas.append("        </vehiculo>")
+     
+    lineas.append("    </" + nombreSeccion + ">")
+ 
+    return lineas
