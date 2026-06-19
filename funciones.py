@@ -924,3 +924,59 @@ def construirSeccionXML(lineas, nombreSeccion, lista):
     lineas.append("    </" + nombreSeccion + ">")
  
     return lineas
+
+def configuracion(ventanaPadre, config):
+    """
+    Funcionalidad: Abre una ventana Toplevel para configurar el parqueo. Solicita el tamano del estacionamiento, el tiempo de gracia en minutos, el monto por hora y si tiene espacio electrico. Si ya existe configuracion cargada, muestra los valores actuales y pide confirmacion para actualizar. Guarda en disco.
+    Entrada: ventanaPadre (tk.Tk): ventana principal del sistema, config (dict): configuracion actual del parqueo (puede estar vacia)
+    Salida: configNueva (dict): diccionario con la configuracion guardada, o None si el usuario cancelo sin guardar
+    """
+    resultado = [None]
+    ventana = tk.Toplevel(ventanaPadre)
+    ventana.title("Configuracion del Parqueo")
+    ventana.resizable(False, False)
+    marco = tk.Frame(ventana, padx=30, pady=25)
+    marco.pack()
+    tk.Label(marco, text="Configuracion del Parqueo",
+             font=("Arial", 13, "bold")).grid(row=0, column=0, columnspan=2, pady=(0, 4))
+    if len(config) > 0: # Subtitulo si hay config existente
+        tk.Label(marco, text="Configuracion actual cargada. Puede modificarla.",
+                 font=("Arial", 9), fg="darkblue").grid(
+            row=1, column=0, columnspan=2, pady=(0, 10))
+    else:
+        tk.Label(marco, text="No se detecto configuracion. Complete los campos.",
+                 font=("Arial", 9), fg="gray").grid(
+            row=1, column=0, columnspan=2, pady=(0, 10))
+    tk.Label(marco, text="Tamano del estacionamiento:", # Tamano del estacionamiento
+             anchor="w", width=28).grid(row=2, column=0, sticky="w", pady=5)
+    entryTamano = tk.Entry(marco, width=18)
+    entryTamano.grid(row=2, column=1, pady=5)
+    if len(config) > 0:
+        entryTamano.insert(0, str(config.get("tamano", "")))
+    tk.Label(marco, text="Tiempo de gracia (minutos):", #Tiempo de gracia
+             anchor="w", width=28).grid(row=3, column=0, sticky="w", pady=5)
+    entryGracia = tk.Entry(marco, width=18)
+    entryGracia.grid(row=3, column=1, pady=5)
+    if len(config) > 0:
+        entryGracia.insert(0, str(config.get("tiempoGracia", "")))
+    tk.Label(marco, text="Monto por hora (colones):",  # Monto por hora
+             anchor="w", width=28).grid(row=4, column=0, sticky="w", pady=5)
+    entryMonto = tk.Entry(marco, width=18)
+    entryMonto.grid(row=4, column=1, pady=5)
+    if len(config) > 0:
+        entryMonto.insert(0, str(config.get("montoPorHora", "")))
+    tk.Label(marco, text="¿Tiene espacio electrico?", # Tiene espacio electrico
+             anchor="w", width=28).grid(row=5, column=0, sticky="w", pady=5)
+    varElectrico = tk.BooleanVar()
+    if len(config) > 0:
+        varElectrico.set(config.get("tieneElectrico", False))
+    else:
+        varElectrico.set(False)
+    marcoRadio = tk.Frame(marco)
+    marcoRadio.grid(row=5, column=1, sticky="w", pady=5)
+    tk.Radiobutton(marcoRadio, text="Si", variable=varElectrico,
+                   value=True).pack(side="left", padx=(0, 10))
+    tk.Radiobutton(marcoRadio, text="No", variable=varElectrico,
+                   value=False).pack(side="left")
+    tk.Frame(marco, height=2, bd=1, relief="sunken").grid(
+        row=6, column=0, columnspan=2, sticky="ew", pady=12)
