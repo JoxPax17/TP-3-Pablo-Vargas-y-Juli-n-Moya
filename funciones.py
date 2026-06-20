@@ -959,7 +959,38 @@ def cierrePorTipoPago(baseDatos):
         messagebox.showinfo("Cierre por Tipo de Pago", "Archivo cierrePorTipoPago.xml generado exitosamente.")
     except Exception as e:
         messagebox.showerror("Error", "No se pudo guardar el archivo: " + str(e))
-
+     
+def exportarCSV(baseDatos):
+    """
+    Funcionalidad: Exporta la informacion completa de todos los vehiculos de la BD a un archivo CSV sin encabezados, para abrirlo en Excel.
+    Entrada: Lista de objetos Estacionamiento
+    Salida: un archivo .csv
+    """
+    if len(baseDatos) == 0:
+        messagebox.showwarning("Sin datos", "No hay vehiculos en la base de datos.")
+        return
+    try:
+        archivo = open("cierreDiario.csv", "w", encoding="utf-8")
+        for vehiculo in baseDatos:
+            placa, marca, color, tipo = vehiculo.info
+            ubicacion, fechaEnt, fechaSal = vehiculo.estadia
+            monto, tipoPago = vehiculo.pago
+            fechaSalStr = fechaSal
+            if fechaSal == "":
+                fechaSalStr = "---"
+            linea = (ubicacion + "," +
+                     placa + "," +
+                     fechaEnt + "," +
+                     fechaSalStr + "," +
+                     obtenerNombrePago(tipoPago) + "," +
+                     str(monto))
+            archivo.write(linea + "\n")
+        archivo.close()
+        messagebox.showinfo("Exportar CSV",
+                            "Archivo cierreDiario.csv generado exitosamente.")
+    except Exception as e:
+        messagebox.showerror("Error", "No se pudo guardar el archivo: " + str(e))
+     
 def configuracion(ventanaPadre, config):
     """
     Funcionalidad: Abre una ventana Toplevel para configurar el parqueo. Solicita el tamano del estacionamiento, el tiempo de gracia en minutos, el monto por hora y si tiene espacio electrico. Si ya existe configuracion cargada, muestra los valores actuales y pide confirmacion para actualizar. Guarda en disco.
