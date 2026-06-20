@@ -924,6 +924,41 @@ def construirSeccionXML(lineas, nombreSeccion, lista):
     lineas.append("    </" + nombreSeccion + ">")
  
     return lineas
+def cierrePorTipoPago(baseDatos):
+    """
+    Funcionalidad: Genera un archivo XML con 3 secciones (Efectivo, SINPE, Tarjeta)
+    Cada seccion contiene la informacion completa y plana de los vehiculos que pagaron con ese metodo. Guarda el archivo en disco.
+    Entrada:lista de objetos Estacionamiento
+    Salida: ninguna
+    """
+    efectivo = []
+    sinpe = []
+    tarjeta = []
+
+    for vehiculo in baseDatos:
+        monto, tipoPago = vehiculo.pago
+        if tipoPago == pagoEfectivo:
+            efectivo.append(vehiculo)
+        if tipoPago == pagoSinpe:
+            sinpe.append(vehiculo)
+        if tipoPago == pagoTarjeta:
+            tarjeta.append(vehiculo)
+
+    lineas = []
+    lineas.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
+    lineas.append("<cierrePorTipoPago>")
+    lineas = construirSeccionXML(lineas, "Efectivo", efectivo)
+    lineas = construirSeccionXML(lineas, "SINPE", sinpe)
+    lineas = construirSeccionXML(lineas, "Tarjeta", tarjeta)
+    lineas.append("</cierrePorTipoPago>")
+    try:
+        archivo = open("cierrePorTipoPago.xml", "w", encoding="utf-8")
+        for linea in lineas:
+            archivo.write(linea + "\n")
+        archivo.close()
+        messagebox.showinfo("Cierre por Tipo de Pago", "Archivo cierrePorTipoPago.xml generado exitosamente.")
+    except Exception as e:
+        messagebox.showerror("Error", "No se pudo guardar el archivo: " + str(e))
 
 def configuracion(ventanaPadre, config):
     """
