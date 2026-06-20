@@ -980,3 +980,62 @@ def configuracion(ventanaPadre, config):
                    value=False).pack(side="left")
     tk.Frame(marco, height=2, bd=1, relief="sunken").grid(
         row=6, column=0, columnspan=2, sticky="ew", pady=12)
+
+    def accionGuardar():
+        """
+        Funcionalidad: Valida que los campos sean enteros positivos, pide confirmacion si ya existia configuracion previa, construye el diccionario, lo guarda en disco con pickle y cierra la ventana.
+        Entrada: ninguna (usa variables del closure)
+        Salida: ninguna
+        """
+        tamanoStr = entryTamano.get().strip()
+        graciaStr = entryGracia.get().strip()
+        montoStr  = entryMonto.get().strip()
+        if tamanoStr == "" or graciaStr == "" or montoStr == "":  # Validar que no esten vacios
+            messagebox.showwarning("Campos vacios",
+                                 "Todos los campos son obligatorios.")
+            return
+        try:
+            tamano = int(tamanoStr) # Validar que sean enteros
+            tiempoGracia = int(graciaStr)
+            montoPorHora = int(montoStr)
+        except:
+            messagebox.showwarning("Valor invalido",
+                                   "El tamano, tiempo de gracia y monto deben ser numeros enteros.")
+            return
+        if tamano <= 0 or tiempoGracia < 0 or montoPorHora <= 0: # Validar que sean positivos
+            messagebox.showwarning("Valor invalido",
+                                   "El tamano y monto deben ser mayores a cero.\n"
+                                   "El tiempo de gracia no puede ser negativo.")
+            return
+        if tamano < 3: # Validar tamano minimo para tener al menos 2 especiales + generales
+            messagebox.showwarning("Tamano muy pequeno",
+                                   "El estacionamiento debe tener al menos 3 espacios.")
+            return
+        if len(config) > 0: # Pedir confirmacion si ya habia config previa
+            confirmacion = messagebox.askyesno(
+                "Actualizar configuracion",
+                "Ya existe una configuracion guardada.\n"
+                "¿Desea reemplazarla con los nuevos valores?")
+            if not confirmacion:
+                return
+        tieneElectrico = varElectrico.get()
+        configNueva = {
+            "tamano":        tamano,
+            "tiempoGracia":  tiempoGracia,
+            "montoPorHora":  montoPorHora,
+            "tieneElectrico": tieneElectrico}
+        guardarConfig(configNueva)
+        resultado[0] = configNueva
+        messagebox.showinfo("Configuracion guardada",
+                            "Configuracion guardada correctamente.\n"
+                            "Tamano: "           + str(tamano)       + " espacios\n"
+                            "Tiempo de gracia: " + str(tiempoGracia) + " minutos\n"
+                            "Monto por hora: CRC " + str(montoPorHora) + "\n"
+                            "Espacio electrico: " + ("Si" if tieneElectrico else "No"))
+        ventana.destroy()
+    tk.Button(marco, text="Guardar", width=24,
+              command=accionGuardar).grid(row=7, column=0, columnspan=2, pady=(0, 4))
+    tk.Button(marco, text="Regresar", width=24,
+              command=ventana.destroy).grid(row=8, column=0, columnspan=2, pady=(0, 4))
+    ventana.wait_window()
+    return resultado[0]
