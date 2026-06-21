@@ -16,7 +16,7 @@ tipoElectrico = 3
 pagoEfectivo = 1
 pagoSinpe = 2
 pagoTarjeta = 3
-apiKey = "Poner api key" #Hay que reemplazar esto por la api key real cuando la tengamos 
+apiKey = "ca45ad00"
 marcasDisponibles = ["Toyota", "Hyundai", "Kia", "Honda", "Nissan",
                      "Mazda", "Suzuki", "Ford", "Chevrolet", "Volkswagen"]
 coloresDisponibles = ["Blanco", "Negro", "Gris", "Rojo", "Azul",
