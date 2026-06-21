@@ -1105,3 +1105,36 @@ def configuracion(ventanaPadre, config):
               command=ventana.destroy).grid(row=8, column=0, columnspan=2, pady=(0, 4))
     ventana.wait_window()
     return resultado[0]
+
+def acercaDe(ventanaPadre):
+    """
+    Funcionalidad: Abre una ventana con informacion del sistema y del equipo desarrollador.
+    Entrada: ventanaPadre (tk.Tk): ventana principal del menu
+    Salida: ninguna
+    """
+    ventana = tk.Toplevel(ventanaPadre)
+    ventana.title("Acerca de")
+    ventana.resizable(False, False)
+    marco = tk.Frame(ventana, padx=30, pady=25)
+    marco.pack()
+    tk.Label(marco, text="Sistema de Estacionamiento",
+             font=("Arial", 15, "bold"), fg="#22527a").grid(row=0, column=0, pady=(0, 4))
+    tk.Label(marco, text="Version 3.14.4",
+             font=("Arial", 10, "italic"), fg="gray").grid(row=1, column=0, pady=(0, 14))
+    tk.Frame(marco, height=2, bd=1, relief="sunken").grid(
+        row=2, column=0, sticky="ew", pady=(0, 12))
+    tk.Label(marco, text="Desarrollado por:",
+             font=("Arial", 11, "bold")).grid(row=3, column=0, pady=(0, 6))
+    tk.Label(marco, text="Pablo Vargas",
+             font=("Arial", 11)).grid(row=4, column=0)
+    tk.Label(marco, text="Julian Moya",
+             font=("Arial", 11)).grid(row=5, column=0, pady=(0, 14))
+    tk.Label(marco, text="Curso: Taller de Programacion",
+             font=("Arial", 10), fg="#444444").grid(row=6, column=0)
+    tk.Label(marco, text="Tecnologico de Costa Rica — 2026",
+             font=("Arial", 10), fg="#444444").grid(row=7, column=0, pady=(0, 16))
+    tk.Frame(marco, height=2, bd=1, relief="sunken").grid(
+        row=8, column=0, sticky="ew", pady=(0, 12))
+    tk.Button(marco, text="Regresar", width=22,
+              command=ventana.destroy).grid(row=9, column=0)
+    ventana.wait_window()
