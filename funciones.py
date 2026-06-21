@@ -255,7 +255,7 @@ def obtenerVehiculos(baseDatos, config):
     except Exception as e:
         print("Error al guardar la BD:", e)
     return nuevaBD
-
+ 
 def obtenerNombreTipo(tipoInt):
     """
     Funcionalidad: Convierte el entero de tipo de vehiculo a su nombre legible.
@@ -459,7 +459,7 @@ def observarEspacio(ventanaPadre, vehiculo, baseDatos, config):
               command=ventana.destroy).grid(row=8, column=0, columnspan=2, pady=(0, 4))
     ventana.wait_window()
     return pagado[0]
-
+ 
 def obtenerUbicacionesOcupadas(baseDatos, tipoEspacio):
     """
     Funcionalidad: Retorna la lista de ubicaciones actualmente ocupadas para un tipo de espacio.
@@ -478,7 +478,7 @@ def generarSiguienteUbicacion(baseDatos, tipoEspacio, config):
     """
     Funcionalidad: Determina la siguiente ubicacion libre disponible para el tipo de espacio solicitado, asignando un codigo secuencial (G-XXX, E-XXX, EL-001).
     Entrada: baseDatos (list): lista de objetos Estacionamiento, tipoEspacio (int): tipo de espacio requerido, config (dict): configuracion del parqueo
-    Salida: 1ubicacion (str): codigo de ubicacion libre, o "" si no hay disponibles
+    Salida: ubicacion (str): codigo de ubicacion libre, o "" si no hay disponibles
     """
     ocupadas = obtenerUbicacionesOcupadas(baseDatos, tipoEspacio)
     if tipoEspacio == tipoElectrico:
@@ -667,8 +667,8 @@ def calcularEspacios(config):
     if tieneElectrico:
         generales = generales - 1
     return especiales, tieneElectrico, generales
-
-
+ 
+ 
 def obtenerColorEspacio(ubicacion, baseDatos):
     """
     Funcionalidad: Determina si un espacio esta ocupado o libre buscando en la BD. Un espacio esta ocupado si tiene fecha de salida vacia.
@@ -679,7 +679,7 @@ def obtenerColorEspacio(ubicacion, baseDatos):
         if vehiculo.estadia[0] == ubicacion and vehiculo.estadia[2] == "":
             return "red", vehiculo
     return "green", None
-
+ 
 def construirComando(btn, ubicacion, ventanaPadre, baseDatos, config, tipoEspacio):
     """
     Funcionalidad:Construye la funcion que ejecuta el clic en un espacio del grid
@@ -698,7 +698,7 @@ def construirComando(btn, ubicacion, ventanaPadre, baseDatos, config, tipoEspaci
             if registrado:
                 btn.config(bg="red")
     return comando
-
+ 
 def verEstacionamiento(ventanaPadre, baseDatos, config):
     """
     Funcionalidad: Abre una ventana con el grid grafico del parqueo. Muestra cada espacio en rojo (ocupado) o verde (libre). Al hacer clic en un espacio abre observarEspacio o estacionarVehiculo segun corresponda.
@@ -721,7 +721,7 @@ def verEstacionamiento(ventanaPadre, baseDatos, config):
     tk.Label(marcoBano, text="BANO SANITARIO", font=("Arial", 7, "bold"), bg="lightyellow", width=14, height=2).pack()
     tk.Label(marco, text="Espacios Especiales:", font=("Arial", 9, "bold")).grid(row=3, column=0, columnspan=10, sticky="w", pady=(8, 2))
     for i in range(1, especiales + 1):
-        ubicacion = "ESP-" + str(i)
+        ubicacion = "E-" + str(i).zfill(3)
         color, _ = obtenerColorEspacio(ubicacion, baseDatos)
         btn = tk.Button(marco, text="ESP\n" + str(i), bg=color, fg="white", width=5, height=2, font=("Arial", 7, "bold"))
         btn.grid(row=4, column=i - 1, padx=3, pady=3)
@@ -755,7 +755,7 @@ def verEstacionamiento(ventanaPadre, baseDatos, config):
     tk.Button(marco, text="Regresar", width=20,command=ventanaParqueo.destroy).grid(row=fila + 1, column=0, columnspan=10, pady=(12, 0))
     ventanaParqueo.wait_window()
     return baseDatos
-
+ 
 def cerrarVehiculosPendientes(baseDatos, config):
     """
     Funcionalidad: Recorre la BD y cierra todos los vehiculos que no tienen fecha de salida, asignandoles un tipo de pago aleatorio, calculando su monto y generando su factura PDF con QR.
@@ -867,7 +867,7 @@ def generarCierrePDF(baseDatos):
              ln=True, align="R")
     pdf.output("cierreDiario.pdf")
     print("cierreDiario.pdf generado exitosamente.")
-
+ 
 def cierreDiario(baseDatos, config):
     """
     Funcionalidad: Cierra todos los vehiculos pendientes de pago con tipo de pago aleatorio, genera sus facturas automaticamente, produce el reporte cierreDiario.pdf con tabla completa, subtotales por tipo de pago y total acumulado del dia, usando 3 colores y 3 tamanios de letra obligatorios. Guarda la BD actualizada.
@@ -893,7 +893,7 @@ def cierreDiario(baseDatos, config):
                             "Reporte guardado en: cierreDiario.pdf")
     except Exception as e:
         messagebox.showerror("Error", "Error al generar el PDF del cierre:\n" + str(e))
-
+ 
 def construirSeccionXML(lineas, nombreSeccion, lista):
     """
     Funcionalidad: Agrega al listado de lineas XML una seccion con todos los vehiculos de la lista recibida, de forma plana.
@@ -901,7 +901,7 @@ def construirSeccionXML(lineas, nombreSeccion, lista):
     Salida: Lista actualizada con la seccion agregada
     """
     lineas.append("    <" + nombreSeccion + ">")
-
+ 
     for vehiculo in lista:
         placa, marca, color, tipo = vehiculo.info
         ubicacion, fechaEntrada, fechaSalida = vehiculo.estadia
@@ -934,7 +934,7 @@ def cierrePorTipoPago(baseDatos):
     efectivo = []
     sinpe = []
     tarjeta = []
-
+ 
     for vehiculo in baseDatos:
         monto, tipoPago = vehiculo.pago
         if tipoPago == pagoEfectivo:
@@ -943,7 +943,7 @@ def cierrePorTipoPago(baseDatos):
             sinpe.append(vehiculo)
         if tipoPago == pagoTarjeta:
             tarjeta.append(vehiculo)
-
+ 
     lineas = []
     lineas.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
     lineas.append("<cierrePorTipoPago>")
@@ -1046,7 +1046,7 @@ def configuracion(ventanaPadre, config):
                    value=False).pack(side="left")
     tk.Frame(marco, height=2, bd=1, relief="sunken").grid(
         row=6, column=0, columnspan=2, sticky="ew", pady=12)
-
+ 
     def accionGuardar():
         """
         Funcionalidad: Valida que los campos sean enteros positivos, pide confirmacion si ya existia configuracion previa, construye el diccionario, lo guarda en disco con pickle y cierra la ventana.
@@ -1105,7 +1105,7 @@ def configuracion(ventanaPadre, config):
               command=ventana.destroy).grid(row=8, column=0, columnspan=2, pady=(0, 4))
     ventana.wait_window()
     return resultado[0]
-
+ 
 def acercaDe(ventanaPadre):
     """
     Funcionalidad: Abre una ventana con informacion del sistema y del equipo desarrollador.
