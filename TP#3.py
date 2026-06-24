@@ -2,14 +2,14 @@
 # Fecha de creacion: 16-06-26 5:30 PM
 # Ultima modificacion: 16-06-26 9:14 PM
 # Version: 3.14.3
-
+ 
 import tkinter as tk
 from tkinter import messagebox
 import funciones
-
+ 
 baseDatos = []
 config = {}
-
+ 
 def cargarDatos():
     """
     Funcionalidad:Intenta cargar la BD y la configuracion desde disco al iniciar.
@@ -23,7 +23,7 @@ def cargarDatos():
     configCargada = funciones.cargarConfig()
     if configCargada != None:
         config.update(configCargada)
-
+ 
 def actualizarBotones():
     """
     Funcionalidad: Habilita o deshabilita botones segun si hay BD cargada.
@@ -37,7 +37,7 @@ def actualizarBotones():
     btnObtenerVehiculos.config(state=estadoBD)
     btnVerEstacionamiento.config(state=estadoBD)
     btnReportes.config(state=estadoBD)
-
+ 
 def accionObtenerVehiculos():
     """
     Funcionalidad: Llama a la funcion que consume la API y llena el parqueo masivamente.
@@ -46,7 +46,7 @@ def accionObtenerVehiculos():
     """
     baseDatos[:] = funciones.obtenerVehiculos(baseDatos, config)
     actualizarBotones()
-
+ 
 def accionVerEstacionamiento():
     """
     Funcionalidad: Abre la ventana del grid grafico del parqueo (luces rojo/verde).
@@ -55,7 +55,7 @@ def accionVerEstacionamiento():
     """
     baseDatos[:] = funciones.verEstacionamiento(ventana, baseDatos, config)
     actualizarBotones()
-
+ 
 def accionCierreDiario():
     """
     Funcionalidad: Llama al cierre diario del parqueo.
@@ -63,7 +63,7 @@ def accionCierreDiario():
     Salida: ninguna
     """
     funciones.cierreDiario(baseDatos, config)
-
+ 
 def accionCierrePorTipoPago():
     """
     Funcionalidad: Llama al reporte de cierre por tipo de pago en XML.
@@ -71,7 +71,7 @@ def accionCierrePorTipoPago():
     Salida: ninguna
     """
     funciones.cierrePorTipoPago(baseDatos)
-
+ 
 def accionExportarCSV():
     """
     Funcionalidad: Exporta el cierre diario a un archivo CSV.
@@ -79,7 +79,7 @@ def accionExportarCSV():
     Salida: ninguna
     """
     funciones.exportarCSV(baseDatos)
-
+ 
 def accionReportes():
     """
     Funcionalidad: Abre una ventana secundaria con los 3 botones de reportes disponibles.
@@ -100,7 +100,7 @@ def accionReportes():
     for i, (texto, comando) in enumerate(opcionesRep):
         tk.Button(marcoRep, text=texto, width=28, anchor="w", padx=6, command=comando).grid(row=i+1, column=0, pady=3)
     tk.Button(marcoRep, text="Regresar", width=28, command=ventanaRep.destroy).grid(row=len(opcionesRep)+1, column=0, pady=(10, 0))
-
+ 
 def accionConfiguracion():
     """
     Funcionalidad: Abre la ventana de configuracion del parqueo (tamano, gracia, monto/hora).
@@ -111,7 +111,7 @@ def accionConfiguracion():
     if configNueva:
         config.update(configNueva)
         actualizarBotones()
-
+ 
 def accionAcercaDe():
     """
     Funcionalidad: Abre la ventana con informacion del equipo desarrollador.
@@ -119,7 +119,7 @@ def accionAcercaDe():
     Salida: ninguna
     """
     funciones.acercaDe(ventana)
-
+ 
 def accionSalir():
     """
     Funcionalidad: Muestra despedida y cierra la aplicacion.
