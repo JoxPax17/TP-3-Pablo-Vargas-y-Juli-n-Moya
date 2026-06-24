@@ -1,3 +1,4 @@
+PY
 # Elaborado por: Pablo Vargas y Julian Moya
 # Fecha de creacion: 16-06-26 9:30 PM
 # Ultima modificacion: 18-06-26 10:00 AM
@@ -23,10 +24,10 @@ coloresDisponibles = ["Blanco", "Negro", "Gris", "Rojo", "Azul",
 class Estacionamiento:
     def __init__(self, id, placa, marca, color, tipo, tipoEspacio,
                  ubicacion, fechaHoraEntrada, fechaHoraSalida, monto, tipoPago):
-        self.id          = id
-        self.info        = (placa, marca, color, tipo)
-        self.estadia     = [ubicacion, fechaHoraEntrada, fechaHoraSalida]
-        self.pago        = (monto, tipoPago)
+        self.id = id
+        self.info = (placa, marca, color, tipo)
+        self.estadia = [ubicacion, fechaHoraEntrada, fechaHoraSalida]
+        self.pago = (monto, tipoPago)
         self.tipoEspacio = tipoEspacio
  
 def cargarBD():
@@ -236,25 +237,22 @@ def crearVoucherTexto(vehiculo, rutaArchivo):
     Salida:
         - ninguna
     """
-    placa, marca, color, tipo  = vehiculo.info
+    placa, marca, color, tipo = vehiculo.info
     ubicacion, fechaEntrada, _ = vehiculo.estadia
     tipoStr = obtenerNombreTipo(tipo)
     codigoVerificacion = placa + "-" + str(marca) + "-" + str(tipo) + "-" + fechaEntrada
     archivo = open(rutaArchivo, "w", encoding="utf-8")
-    archivo.write("================================================\n")
-    archivo.write("          VOUCHER DE ESTACIONAMIENTO\n")
-    archivo.write("================================================\n\n")
-    archivo.write("Placa:          " + placa + "\n")
-    archivo.write("Tipo:           " + tipoStr + "\n")
-    archivo.write("Color:          " + str(color) + "\n")
-    archivo.write("Ubicacion:      " + ubicacion + "\n")
-    archivo.write("Hora entrada:   " + fechaEntrada + "\n\n")
+    archivo.write("VOUCHER DE ESTACIONAMIENTO\n")
+    archivo.write("Placa: " + placa + "\n")
+    archivo.write("Tipo: " + tipoStr + "\n")
+    archivo.write("Color: " + str(color) + "\n")
+    archivo.write("Ubicacion: " + ubicacion + "\n")
+    archivo.write("Hora entrada: " + fechaEntrada + "\n\n")
     archivo.write("------------------------------------------------\n")
     archivo.write("Codigo de verificacion:\n")
     archivo.write(codigoVerificacion + "\n")
     archivo.write("------------------------------------------------\n\n")
     archivo.write("Conserve este voucher para el retiro de su vehiculo.\n")
-    archivo.write("================================================\n")
     archivo.close()
  
 def crearFacturaTexto(vehiculo, rutaArchivo):
@@ -273,7 +271,7 @@ def crearFacturaTexto(vehiculo, rutaArchivo):
     monto, tipoPago               = vehiculo.pago
     codigoVerificacion = placa + "-" + str(marca) + "-" + str(tipo) + "-" + fechaEnt
     archivo = open(rutaArchivo, "w", encoding="utf-8")
-    archivo.write("          FACTURA DE ESTACIONAMIENTO\n")
+    archivo.write("FACTURA DE ESTACIONAMIENTO\n")
     archivo.write("Datos del vehiculo:\n")
     archivo.write("Placa:" + placa + "\n")
     archivo.write("Marca/Tipo:" + str(marca) + " (" + obtenerNombreTipo(tipo) + ")\n")
@@ -289,7 +287,6 @@ def crearFacturaTexto(vehiculo, rutaArchivo):
     archivo.write("Codigo de verificacion:\n")
     archivo.write(codigoVerificacion + "\n\n")
     archivo.write("Gracias por usar nuestro servicio de estacionamiento.\n")
-    archivo.write("================================================\n")
     archivo.close()
  
  
@@ -326,16 +323,16 @@ def obtenerVehiculos(baseDatos, config):
         ubicacion = generarUbicacion(indice)
         fechaHoraEntrada = generarFechaHoraEntrada()
         diccionario[placa] = {
-            "marca":            marca,
-            "color":            color,
-            "tipo":             tipo,
-            "ubicacion":        ubicacion,
+            "marca": marca,
+            "color": color,
+            "tipo": tipo,
+            "ubicacion": ubicacion,
             "fechaHoraEntrada": fechaHoraEntrada,
-            "fechaHoraSalida":  "",
-            "monto":            0,
-            "tipoPago":         0}
+            "fechaHoraSalida": "",
+            "monto": 0,
+            "tipoPago": 0}
         indice = indice + 1
-    print("\n DICCIONARIO DE VEHICULOS CARGADOS 
+    print("\n===== DICCIONARIO DE VEHICULOS CARGADOS =====")
     for placa, datosVehiculo in diccionario.items():
         print("Placa:", placa, "->", datosVehiculo)
     nuevaBD= []
@@ -447,8 +444,8 @@ def observarEspacio(ventanaPadre, vehiculo, baseDatos, config):
         varPago = tk.IntVar(value=pagoEfectivo)
         opcionesPago = [
             ("Efectivo", pagoEfectivo),
-            ("SINPE",    pagoSinpe),
-            ("Tarjeta",  pagoTarjeta),]
+            ("SINPE", pagoSinpe),
+            ("Tarjeta", pagoTarjeta),]
         for i, (texto, valor) in enumerate(opcionesPago):
             tk.Radiobutton(marcoPago, text=texto, variable=varPago,
                            value=valor).grid(row=i+1, column=0, sticky="w", pady=2)
@@ -479,9 +476,9 @@ def observarEspacio(ventanaPadre, vehiculo, baseDatos, config):
                 "\n\n¿Confirma el pago?")
             if not confirmacion:
                 return
-            fechaSalida         = datetime.datetime.now().strftime("%d-%m-%Y %H:%M")
+            fechaSalida = datetime.datetime.now().strftime("%d-%m-%Y %H:%M")
             vehiculo.estadia[2] = fechaSalida
-            vehiculo.pago       = (montoEstimado, tipoPagoElegido)
+            vehiculo.pago = (montoEstimado, tipoPagoElegido)
             fechaFormato = fechaSalida.replace(":", "").replace(" ", "_").replace("-", "")
             rutaFactura  = "factura_#" + placa + "_" + fechaFormato + ".txt"
             try:
@@ -652,7 +649,6 @@ def estacionarVehiculo(ventanaPadre, ubicacionLibre, tipoEspacio, baseDatos, con
     entryHora.insert(0, horaActual)
     entryHora.config(state="disabled", disabledforeground="black")
     entryHora.grid(row=8, column=1, pady=4)
- 
     tk.Frame(marco, height=2, bd=1, relief="sunken").grid(
         row=9, column=0, columnspan=2, sticky="ew", pady=10)
  
@@ -1010,7 +1006,7 @@ def cierrePorTipoPago(baseDatos):
         - ninguna
     """
     efectivo = []
-    sinpe    = []
+    sinpe = []
     tarjeta  = []
     for vehiculo in baseDatos:
         monto, tipoPago = vehiculo.pago
@@ -1154,7 +1150,7 @@ def configuracion(ventanaPadre, config):
             messagebox.showwarning("Campos vacios", "Todos los campos son obligatorios.")
             return
         try:
-            tamano       = int(tamanoStr)
+            tamano = int(tamanoStr)
             tiempoGracia = int(graciaStr)
             montoPorHora = int(montoStr)
         except:
@@ -1174,25 +1170,23 @@ def configuracion(ventanaPadre, config):
             confirmacion = messagebox.askyesno(
                 "Actualizar configuracion",
                 "Ya existe una configuracion guardada.\n"
-                "¿Desea reemplazarla con los nuevos valores?"
-            )
+                "¿Desea reemplazarla con los nuevos valores?")
             if not confirmacion:
                 return
- 
         tieneElectrico = varElectrico.get()
         configNueva = {
-            "tamano":         tamano,
-            "tiempoGracia":   tiempoGracia,
-            "montoPorHora":   montoPorHora,
+            "tamano": tamano,
+            "tiempoGracia": tiempoGracia,
+            "montoPorHora": montoPorHora,
             "tieneElectrico": tieneElectrico}
         guardarConfig(configNueva)
         resultado[0] = configNueva
         messagebox.showinfo("Configuracion guardada",
                             "Configuracion guardada correctamente.\n"
-                            "Tamano: "             + str(tamano)       + " espacios\n"
-                            "Tiempo de gracia: "   + str(tiempoGracia) + " minutos\n"
+                            "Tamano: " + str(tamano) + " espacios\n"
+                            "Tiempo de gracia: " + str(tiempoGracia) + " minutos\n"
                             "Monto por hora: CRC " + str(montoPorHora) + "\n"
-                            "Espacio electrico: "  + ("Si" if tieneElectrico else "No"))
+                            "Espacio electrico: " + ("Si" if tieneElectrico else "No"))
         ventana.destroy()
     tk.Button(marco, text="Guardar", width=24,
               command=accionGuardar).grid(row=7, column=0, columnspan=2, pady=(0, 4))
