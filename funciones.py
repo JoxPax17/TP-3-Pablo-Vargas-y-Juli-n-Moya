@@ -1,4 +1,3 @@
-PY
 # Elaborado por: Pablo Vargas y Julian Moya
 # Fecha de creacion: 16-06-26 9:30 PM
 # Ultima modificacion: 18-06-26 10:00 AM
@@ -133,7 +132,7 @@ def calcularEspacios(config):
         - tieneElectrico (bool): si el parqueo tiene espacio electrico
         - generales (int): cantidad de espacios generales disponibles
     """
-    tamano = config["tamaño"]
+    tamano = config["tamano"]
     especiales = int(tamano * 0.05)
     if tamano * 0.05 > especiales:
         especiales = especiales + 1
