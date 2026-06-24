@@ -1,6 +1,6 @@
 # Elaborado por: Pablo Vargas y Julian Moya
 # Fecha de creacion: 16-06-26 9:30 PM
-# Ultima modificacion: 18-06-26 10:00 AM
+# Ultima modificacion: 23-06-26 11:20 PM
 # Version: 3.14.5
  
 import pickle, random, datetime, urllib.request, json
@@ -14,7 +14,7 @@ tipoElectrico = 3
 pagoEfectivo = 1
 pagoSinpe = 2
 pagoTarjeta = 3
-apiKey = "ca45ad00"
+apiKey = "837262c0"
 marcasDisponibles = ["Toyota", "Hyundai", "Kia", "Honda", "Nissan",
                      "Mazda", "Suzuki", "Ford", "Chevrolet", "Volkswagen"]
 coloresDisponibles = ["Blanco", "Negro", "Gris", "Rojo", "Azul",
@@ -302,7 +302,7 @@ def obtenerVehiculos(baseDatos, config):
         - nuevaBD (list): lista actualizada de objetos Estacionamiento
     """
     tope = calcularTopeMasivo(config)
-    url  = ("https://api.mockaroo.com/api/generate.json"
+    url  = ("https://my.api.mockaroo.com/vehiculos_parqueo.json"
             "?key=" + apiKey + "&count=" + str(tope))
     try:
         respuesta = urllib.request.urlopen(url)
@@ -397,7 +397,7 @@ def observarEspacio(ventanaPadre, vehiculo, baseDatos, config):
     tk.Label(marco, text="# Campo:", anchor="w", width=16).grid(row=1, column=0, sticky="w", pady=3)
     varCampo   = tk.StringVar(value=ubicacion)
     comboCampo = ttk.Combobox(marco, textvariable=varCampo, state="disabled",
-                               disabledforeground="black", width=22)
+                               width=22)
     comboCampo.grid(row=1, column=1, pady=3)
     tk.Label(marco, text="Placa:", anchor="w", width=16).grid(row=2, column=0, sticky="w", pady=3)
     entryPlaca = tk.Entry(marco, width=25)
@@ -407,12 +407,12 @@ def observarEspacio(ventanaPadre, vehiculo, baseDatos, config):
     tk.Label(marco, text="Marca:", anchor="w", width=16).grid(row=3, column=0, sticky="w", pady=3)
     varMarca   = tk.StringVar(value=str(marca))
     comboMarca = ttk.Combobox(marco, textvariable=varMarca, state="disabled",
-                               disabledforeground="black", width=22)
+                               width=22)
     comboMarca.grid(row=3, column=1, pady=3)
     tk.Label(marco, text="Color:", anchor="w", width=16).grid(row=4, column=0, sticky="w", pady=3)
     varColor   = tk.StringVar(value=str(color))
     comboColor = ttk.Combobox(marco, textvariable=varColor, state="disabled",
-                               disabledforeground="black", width=22)
+                               width=22)
     comboColor.grid(row=4, column=1, pady=3)
     tk.Label(marco, text="Hora de entrada:", anchor="w", width=16).grid(row=5, column=0, sticky="w", pady=3)
     entryEntrada = tk.Entry(marco, width=25)
