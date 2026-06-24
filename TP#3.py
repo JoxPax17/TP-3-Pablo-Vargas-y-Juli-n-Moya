@@ -1,11 +1,10 @@
 # Elaborado por: Pablo Vargas y Julian Moya
 # Fecha de creacion: 16-06-26 5:30 PM
-# Ultima modificacion: 16-06-26 9:14 PM
+# Ultima modificacion: 23-06-26 11:20 PM
 # Version: 3.14.3
- 
+import funciones
 import tkinter as tk
 from tkinter import messagebox
-import funciones
  
 baseDatos = []
 config = {}
@@ -26,15 +25,22 @@ def cargarDatos():
  
 def actualizarBotones():
     """
-    Funcionalidad: Habilita o deshabilita botones segun si hay BD cargada.
+    Funcionalidad: Habilita "Obtener vehiculos" si hay configuracion guardada.
+    Habilita "Ver estacionamiento" y "Reportes" si ademas hay BD cargada.
     Entrada: ninguna
     Salida: ninguna
     """
+    if len(config) > 0:
+        estadoConfig = "normal"
+    else:
+        estadoConfig = "disabled"
+
     if len(baseDatos) > 0:
         estadoBD = "normal"
     else:
         estadoBD = "disabled"
-    btnObtenerVehiculos.config(state=estadoBD)
+
+    btnObtenerVehiculos.config(state=estadoConfig)
     btnVerEstacionamiento.config(state=estadoBD)
     btnReportes.config(state=estadoBD)
  
@@ -154,3 +160,4 @@ btnReportes = botonesMenu[2]
 cargarDatos()
 actualizarBotones()
 ventana.mainloop()
+
